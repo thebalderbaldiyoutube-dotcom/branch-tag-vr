@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Branch Tag VR - Monke Rig</title>
+<title>Branch Tag VR - Mitosis</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#9ad0ec;font-family:system-ui,sans-serif}
 canvas{display:block}
@@ -12,7 +12,7 @@ canvas{display:block}
 addEventListener('error',function(e){var d=document.getElementById('err');if(!d){d=document.createElement('pre');d.id='err';d.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:50%;overflow:auto;margin:0;padding:10px;background:#300d;color:#fff;font:12px monospace;z-index:9999;white-space:pre-wrap';document.body.appendChild(d);}
  d.textContent+=(e.target&&e.target.src?'FAILED TO LOAD '+e.target.src:(e.message||'error')+(e.lineno?' (line '+e.lineno+')':''))+'\n';},true);
 </script>
-<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse &middot; Q blue portal &middot; E orange portal &middot; V portal gun<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: [ / ] = arm length, H = mitosis, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
+<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse &middot; Q blue portal &middot; E orange portal &middot; V portal gun<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: [ / ] = arm length, H = mitosis, J = despawn last, Shift+J = despawn all, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -251,7 +251,7 @@ function drawPanel(){
   px.fillStyle=FIELDS[sel][0]==='NAME'?'#20d8ff':'#17485c';px.fillRect(...nameBtn);px.strokeStyle='#baf6ff';px.lineWidth=5;px.strokeRect(...nameBtn);px.fillStyle='#fff';px.textAlign='center';px.font='bold 34px monospace';px.fillText('CHANGE NAME',nameBtn[0]+nameBtn[2]/2,nameBtn[1]+51);
   px.textAlign='center';KEYS.forEach((k,i)=>{const b=kb(i);px.fillStyle=k==='ENT'?'#2a8f5a':k==='BACKSPACE'?'#8a3a3a':'#1f6b46';px.fillRect(...b);
     px.fillStyle='#fff';px.textAlign='center';px.font='bold '+(k==='BACKSPACE'?19:(i<13?40:26))+'px monospace';px.fillText(k,b[0]+b[2]/2,b[1]+b[3]/2+(i<13?14:9));});
-  px.textAlign='left';px.fillStyle='#9ef';px.font='26px monospace';px.fillText('NET: '+net+'   PLAYERS: '+(1+Object.keys(remotes).length+mitosisClones.length),36,985);
+  px.textAlign='left';px.fillStyle='#9ef';px.font='26px monospace';px.fillText('NET: '+net+'   PLAYERS: '+(1+Object.keys(remotes).length+mitosisClones.length+Object.keys(netMitosis).length),36,985);
   pTex.needsUpdate=true;}
 function applyBuf(){const n=parseInt(buf||'0',10),f=FIELDS[sel][0];
   if(f==='LOBBY'){cfg.lobby=Math.min(99,n);clearTimeout(jt);jt=setTimeout(joinLobby,800);}
@@ -281,8 +281,8 @@ addEventListener('keydown',e=>{if(FIELDS[sel]&&FIELDS[sel][0]==='NAME'&&!e.repea
 // ---------- Mod menu (floor screen left of the computer + pop-up menu; desktop keys 1-0, M) ----------
 const MODS=[['NOODLE ARMS','noodle'],['LOW GRAVITY','lowg'],['SUPER FLING','fling'],['ZERO GRAVITY','zerog'],['HEAVY GRAVITY','heavy'],['SPEED BOOST','speed'],['BOUNCY WALLS','bouncy'],['BIG HANDS','bighands'],
   ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
-  ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['PEAK LIGHTING','peaklight'],['MITOSIS (TAP)','mitosis'],['STICK (OWNER ONLY)','stick']];
-const ACT=['respawn','randmap','mrec','mplay','mslot','mitosis'];
+  ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['PEAK LIGHTING','peaklight'],['MITOSIS (TAP)','mitosis'],['DESPAWN MITOSIS','demitosis'],['STICK (OWNER ONLY)','stick']];
+const ACT=['respawn','randmap','mrec','mplay','mslot','mitosis','demitosis'];
 const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>[24+(i%3)*330,112+((i/3)|0)*74,312,66];
 mods.music=mods.sfx=mods.pets=true;if(savedData.mods)for(const k in savedData.mods)if(k in mods)mods[k]=!!savedData.mods[k];if(savedData.peaklight===false)mods.peaklight=false;else mods.peaklight=true;
 const armK=()=>ARM;// arm reach and visible arm length are both unlimited
@@ -298,7 +298,7 @@ function applyLighting(){const on=!!mods.peaklight;renderer.shadowMap.enabled=on
 function toggleMod(k){
   if(k==='stick'&&!mods.stick&&!isOwner()){dbg.textContent='Only the lobby owner has the stick';sfx.no();return;}
   if(k==='mrec'){macRec();return;}if(k==='mplay'){macPlay();return;}if(k==='mslot'){mac.slot=(mac.slot+1)%3;sfx.click();drawMods();return;}
-  if(k==='respawn'){sfx.click();respawn();dbg.textContent='Respawned';return;}if(k==='mitosis'){mitosis();drawMods();return;}
+  if(k==='respawn'){sfx.click();respawn();dbg.textContent='Respawned';return;}if(k==='mitosis'){mitosis();drawMods();return;}if(k==='demitosis'){despawnMitosis(false);drawMods();return;}
   if(k==='randmap'){sfx.click();if(net!=='JOINED'){cfg.map=(Math.random()*4)|0;buildMap(cfg.map);respawn();drawPanel();}return;}
   mods[k]=!mods[k];sfx.mod(mods[k]);if(k==='peaklight')applyLighting();
   if(k==='nofog'){scene.fog.near=mods.nofog?1e5:25;scene.fog.far=mods.nofog?2e5:110;}
@@ -324,19 +324,22 @@ const localNameTag=nameTag(playerName);localNameTag.position.set(0,.05,-.19);tor
 function setNameTag(sp,text){const n=nameTag(text);sp.material.map.dispose();sp.material.map=n.material.map;sp.material.needsUpdate=true;n.material.dispose();}
 // ---------- Multiplayer (PeerJS peer-to-peer, free public signaling) ----------
 let net='SOLO',remotes={},peer=null,conns=[],isHost=false,myId='me',itId=null,jt=0,tagUntil=0,ncd=0,lastSend=0,lastLi=false;
-const states={},multi=()=>Object.keys(remotes).length>0,localIt=()=>mods.alwaysit||(multi()?itId===myId:!aiIt);
+const states={},netMitosis={},multi=()=>Object.keys(remotes).length>0,localIt=()=>mods.alwaysit||(multi()?itId===myId:!aiIt);
 function mkRemote(id){const mat=new THREE.MeshStandardMaterial({roughness:.65}),g=new THREE.Group(),head=new THREE.Mesh(new THREE.SphereGeometry(.25,10,8),mat),body=new THREE.Mesh(new THREE.BoxGeometry(.24,.64,.18),mat),lh=new THREE.Mesh(new THREE.SphereGeometry(.135,10,8),mat),rh=lh.clone(),la=new THREE.Mesh(cyl,mat),ra=new THREE.Mesh(cyl,mat);body.scale.set(1,1,1);const tag=nameTag(id==='H'?'HOST':'MONKE '+String(id).slice(0,5));tag.position.set(0,.05,-.19);body.add(tag);g.add(head,body,lh,rh,la,ra);scene.add(g);return remotes[id]={g,mat,s:null,head,body,lh,rh,la,ra,tag};}
 function syncRemotes(s){let ch=false;
   for(const id in s){if(id===myId||remotes[id])continue;mkRemote(id);ch=true;}
   for(const id in remotes){if(s[id])remotes[id].s=s[id];else{scene.remove(remotes[id].g);if(remotes[id].stick)scene.remove(remotes[id].stick);delete remotes[id];ch=true;}}
   if(ch)drawPanel();}
-function closeNet(){try{peer&&peer.destroy();}catch(e){}peer=null;conns=[];isHost=false;myId='me';itId=null;for(const k in states)delete states[k];syncRemotes({});net='SOLO';}
+function closeNet(){try{peer&&peer.destroy();}catch(e){}peer=null;conns=[];isHost=false;myId='me';itId=null;for(const k in states)delete states[k];syncRemotes({});for(const id in netMitosis)removeNetMitosis(id);net='SOLO';}
 function tryTag(id){if(isHost){if(performance.now()>tagUntil){itId=id;tagUntil=performance.now()+(mods.nocd?300:3000);}}else if(conns[0]&&conns[0].open)conns[0].send({t:'tag',to:id});}
+function removeNetMitosis(id){const r=netMitosis[id];if(!r)return;scene.remove(r.g);delete netMitosis[id];}
+function syncNetMitosis(all){const seen=new Set();for(const owner in all){if(owner===myId)continue;const st=all[owner],arr=st&&st.ms||[];for(const m of arr){const id=owner+'~'+m.i;seen.add(id);let r=netMitosis[id];if(!r){r=mkRemote(id);delete remotes[id];netMitosis[id]=r;}const p=m.p;r.head.position.set(p[0],p[1],p[2]);r.lh.position.set(p[3],p[4],p[5]);r.rh.position.set(p[6],p[7],p[8]);r.body.position.set(p[9],p[10],p[11]);r.body.rotation.y=p[12];const q=new THREE.Quaternion().setFromAxisAngle(Y,p[12]),ls=r.body.position.clone().add(new V3(-.11,.18,0).applyQuaternion(q)),rs=r.body.position.clone().add(new V3(.11,.18,0).applyQuaternion(q));link(r.la,ls,r.lh.position);link(r.ra,rs,r.rh.position);r.mat.color.set(st.c);if(st.n&&r.lastName!==st.n){r.lastName=st.n;setNameTag(r.tag,st.n);}remoteCosmetics(r,st.eq);}}
+for(const id in netMitosis)if(!seen.has(id))removeNetMitosis(id);drawPanel();}
 function onData(c,m){
   if(m.t==='kick'){dbg.textContent='KICKED BY HOST STICK';closeNet();respawn();return;}
   if(m.t==='s'){c.pid=m.id;states[m.id]=m.st;}
   else if(m.t==='tag'&&isHost)tryTag(m.to);
-  else if(m.t==='S'){itId=m.it;if(m.map!==mapId){cfg.map=m.map;buildMap(m.map);respawn();drawPanel();}syncRemotes(m.s);}
+  else if(m.t==='S'){itId=m.it;if(m.map!==mapId){cfg.map=m.map;buildMap(m.map);respawn();drawPanel();}syncRemotes(m.s);syncNetMitosis(m.s);}
 }
 function joinLobby(){
   closeNet();if(!cfg.lobby){drawPanel();return;}
@@ -357,8 +360,8 @@ function asClient(hid){// lobby already has a host: join it
 function netTick(now){// 15 Hz: clients send pose to host, host broadcasts everyone
   if(!peer||now-lastSend<66)return;lastSend=now;
   const hd=headW(),a=hands[0].m.position,b=hands[1].m.position,
-  st={c:myColor(),n:playerName,eq:Object.keys(eq).filter(k=>eq[k]).join(','),iv:mods.invis?1:0,sk:(mods.stick&&stickTip)?[stickA.x,stickA.y,stickA.z,stickTip.x,stickTip.y,stickTip.z].map(v=>Math.round(v*100)/100):0,p:[hd.x,hd.y,hd.z,a.x,a.y,a.z,b.x,b.y,b.z,torso.rotation.y].map(v=>Math.round(v*100)/100)};
-  if(isHost){states.H=st;conns.forEach(c=>c.open&&c.send({t:'S',s:states,it:itId,map:mapId}));syncRemotes(states);}
+  st={c:myColor(),n:playerName,eq:Object.keys(eq).filter(k=>eq[k]).join(','),ms:mitosisClones.map((r,i)=>({i:r.mid||i,p:[r.head.position.x,r.head.position.y,r.head.position.z,r.lh.position.x,r.lh.position.y,r.lh.position.z,r.rh.position.x,r.rh.position.y,r.rh.position.z,r.body.position.x,r.body.position.y,r.body.position.z,r.body.rotation.y].map(v=>Math.round(v*100)/100)})),iv:mods.invis?1:0,sk:(mods.stick&&stickTip)?[stickA.x,stickA.y,stickA.z,stickTip.x,stickTip.y,stickTip.z].map(v=>Math.round(v*100)/100):0,p:[hd.x,hd.y,hd.z,a.x,a.y,a.z,b.x,b.y,b.z,torso.rotation.y].map(v=>Math.round(v*100)/100)};
+  if(isHost){states.H=st;conns.forEach(c=>c.open&&c.send({t:'S',s:states,it:itId,map:mapId}));syncRemotes(states);syncNetMitosis(states);}
   else{const c=conns[0];if(c&&c.open)c.send({t:'s',id:myId,st});}
 }
 function netStep(dt){
@@ -600,7 +603,8 @@ BUILD.me=g=>{const m=new THREE.MeshStandardMaterial({color:myColor(),roughness:.
 ASND.me=v=>{if(!mods.sfx)return;tone(660,.1,'triangle',.3*v);tone(880,.12,'triangle',.3*v,.1);};
 function addPet(t,x,z){const g=new THREE.Group();BUILD[t](g);const p={g,t,x,z,dir:new V3(0,0,1),tm:0,pause:true,cd:0,happy:0,vy:3,y:0,snd:1,sp:.7+Math.random()*.5,rot:Math.random()*6.28,cur:Math.random()<.5,clone:true};
   g.userData.pet=p;g.position.set(x,0,z);petG.add(g);pets.push(p);return p;}
-function mitosis(){const id='MITOSIS_'+(++mitosisId),r=mkRemote(id);delete remotes[id];const hd=headW(),body=torso.position.clone(),lh=hands[0].m.position.clone(),rh=hands[1].m.position.clone();r.head.position.copy(hd);r.body.position.copy(body);r.lh.position.copy(lh);r.rh.position.copy(rh);r.body.rotation.y=torso.rotation.y;const ls=torso.localToWorld(new V3(-.11,.18,0)),rs=torso.localToWorld(new V3(.11,.18,0));link(r.la,ls,lh);link(r.ra,rs,rh);r.mat.color.set(myColor());r.mat.emissive.set(0);r.lastName=playerName;setNameTag(r.tag,playerName);remoteCosmetics(r,Object.keys(eq).filter(k=>eq[k]).join(','));r.g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});r.wander={dir:new V3(Math.random()-.5,0,Math.random()-.5).normalize(),t:.5+Math.random()*2,s:.45+Math.random()*.55,baseHead:r.head.position.clone().sub(r.body.position),baseLH:r.lh.position.clone().sub(r.body.position),baseRH:r.rh.position.clone().sub(r.body.position),baseBodyY:r.body.position.y};mitosisClones.push(r);cloneFx=1;sfx.buy();heart(hd.clone().add(new V3(-.22,.25,0)));heart(hd.clone().add(new V3(.22,.38,0)));dbg.textContent='MITOSIS '+mitosisClones.length+' CREATED';drawPanel();}
+function mitosis(){const id='MITOSIS_'+(++mitosisId),r=mkRemote(id);delete remotes[id];const hd=headW(),body=torso.position.clone(),lh=hands[0].m.position.clone(),rh=hands[1].m.position.clone();r.head.position.copy(hd);r.body.position.copy(body);r.lh.position.copy(lh);r.rh.position.copy(rh);r.body.rotation.y=torso.rotation.y;const ls=torso.localToWorld(new V3(-.11,.18,0)),rs=torso.localToWorld(new V3(.11,.18,0));link(r.la,ls,lh);link(r.ra,rs,rh);r.mat.color.set(myColor());r.mat.emissive.set(0);r.lastName=playerName;setNameTag(r.tag,playerName);remoteCosmetics(r,Object.keys(eq).filter(k=>eq[k]).join(','));r.g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});r.wander={dir:new V3(Math.random()-.5,0,Math.random()-.5).normalize(),t:.5+Math.random()*2,s:.45+Math.random()*.55,baseHead:r.head.position.clone().sub(r.body.position),baseLH:r.lh.position.clone().sub(r.body.position),baseRH:r.rh.position.clone().sub(r.body.position),baseBodyY:r.body.position.y};r.mid=mitosisId;mitosisClones.push(r);cloneFx=1;sfx.buy();heart(hd.clone().add(new V3(-.22,.25,0)));heart(hd.clone().add(new V3(.22,.38,0)));dbg.textContent='MITOSIS '+mitosisClones.length+' CREATED';drawPanel();}
+function despawnMitosis(all=false){if(!mitosisClones.length){dbg.textContent='NO MITOSIS TO DESPAWN';sfx.no();return;}const list=all?mitosisClones.splice(0):[mitosisClones.pop()];for(const r of list)scene.remove(r.g);dbg.textContent=all?'ALL MITOSIS DESPAWNED':'LAST MITOSIS DESPAWNED';sfx.click();drawPanel();lastSend=0;}
 function cloneItem(i){const k=CL[i][1];
   if(k==='clear'){for(let j=pets.length-1;j>=0;j--)if(pets[j].clone){petG.remove(pets[j].g);pets.splice(j,1);}sfx.click();return;}
   if(pets.length>=45){dbg.textContent='Too many pets!';sfx.no();return;}
@@ -699,6 +703,7 @@ let stickTip=null,stickA=null,tipPrev=new V3(),swooshCd=0,stickKickCd=0,stHeld=f
 sfx.swoosh=v=>{if(mods.sfx)noise(.12,.25*v,2500,0,null,'bandpass');};
 addEventListener('keydown',e=>{if(e.code==='KeyT'&&!e.repeat&&!inVR())toggleMod('stick');});
 addEventListener('keydown',e=>{if(e.code==='KeyH'&&!e.repeat&&!inVR())mitosis();});
+addEventListener('keydown',e=>{if(e.code==='KeyJ'&&!e.repeat&&!inVR())despawnMitosis(e.shiftKey);});
 function stickStep(dt){
   if(!isOwner()&&mods.stick){mods.stick=false;drawMods();dbg.textContent='Only the lobby owner has the stick';}
   const rh=hands.find(h=>h.src&&h.src.handedness==='right'),g=rh&&rh.src.gamepad,pr=!!(g&&g.buttons[3]&&g.buttons[3].pressed);
