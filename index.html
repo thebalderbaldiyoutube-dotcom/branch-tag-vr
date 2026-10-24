@@ -271,7 +271,7 @@ addEventListener('keydown',e=>{const d=e.code==='KeyQ'?1:e.code==='KeyP'?-1:0;//
 
 // ---------- Mod menu (floor screen left of the computer + pop-up menu; desktop keys 1-0, M) ----------
 const MODS=[['NOODLE ARMS','noodle'],['LOW GRAVITY','lowg'],['SUPER FLING','fling'],['ZERO GRAVITY','zerog'],['HEAVY GRAVITY','heavy'],['SPEED BOOST','speed'],['BOUNCY WALLS','bouncy'],['BIG HANDS','bighands'],
-  ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['THIRD PERSON','third'],['FLY','fly'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
+  ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
   ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['STICK (OWNER ONLY)','stick']];
 const ACT=['respawn','randmap','mrec','mplay','mslot'];
 const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>[24+(i%3)*330,112+((i/3)|0)*74,312,66];
@@ -293,7 +293,6 @@ function toggleMod(k){
   mods[k]=!mods[k];sfx.mod(mods[k]);
   if(k==='nofog'){scene.fog.near=mods.nofog?1e5:25;scene.fog.far=mods.nofog?2e5:110;}
   if(k==='fov'){camera.fov=mods.fov?105:70;camera.updateProjectionMatrix();}
-  if(k==='third')setThirdPerson(mods.third);
   setState();drawMods();dbg.textContent=MODS.find(m=>m[1]===k)[0]+': '+(mods[k]?'ON':'OFF');}
 function modAt(x,y){MODS.forEach(([n,k],i)=>{const b=mb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])toggleMod(k);});}
 function modPress(p){modAt((p.x-PM.x)/PS*1024+512,(p.z-PM.z)/PS*1024+512);}
@@ -309,11 +308,6 @@ let snapHeld=false,menuHeld=false;
 const headW=()=>camera.position.clone().applyAxisAngle(Y,rig.rotation.y).add(rig.position);
 function turn(d){const c=camera.position,th=rig.rotation.y,a=c.clone().applyAxisAngle(Y,th),b=c.clone().applyAxisAngle(Y,th+d);rig.position.add(a.sub(b));rig.rotation.y=th+d;}// pivot around your head
 
-// ---------- Third person + fly mods ----------
-const tpCam=new THREE.PerspectiveCamera(70,camera.aspect,.05,300),tpLook=new V3(),tpWant=new V3();let tpLast=false;
-function setThirdPerson(on){on=!!on&&!inVR();tpLast=on;const layer0=(o,yes)=>o.traverse(x=>yes?x.layers.enable(0):x.layers.disable(0));layer0(headG,on);layer0(cape,on);hands.forEach(h=>{layer0(h.m,on);layer0(h.arm,on);if(h.beads)h.beads.forEach(b=>layer0(b,on));});}
-function renderCam(dt){const on=!!mods.third&&!inVR();if(on!==tpLast)setThirdPerson(on);if(!on)return camera;const h=headW(),q=camera.getWorldQuaternion(new THREE.Quaternion()),back=new V3(0,.38,3.2).applyQuaternion(q);tpWant.copy(h).add(back);tpCam.position.lerp(tpWant,Math.min(1,10*dt));tpLook.copy(h).add(new V3(0,-.18,0));tpCam.lookAt(tpLook);tpCam.fov=camera.fov;tpCam.aspect=camera.aspect;tpCam.updateProjectionMatrix();return tpCam;}
-function flyStep(dt){vel.set(0,0,0);prevN=0;const sp=(keys.ShiftLeft||keys.ShiftRight)?14:7,move=new V3();if(inVR()){renderer.xr.getCamera(camera);const lh=hands.find(h=>h.src&&h.src.handedness==='left'),g=lh&&lh.src.gamepad,ax=g&&g.axes||[],x=ax[2]||ax[0]||0,z=ax[3]||ax[1]||0,f=camera.getWorldDirection(new V3());f.y=0;if(f.lengthSq())f.normalize();const r=new V3(-f.z,0,f.x);move.addScaledVector(r,x).addScaledVector(f,-z);const bs=g&&g.buttons||[];if((bs[4]&&bs[4].pressed)||(bs[0]&&bs[0].pressed))move.y++;if((bs[5]&&bs[5].pressed)||(bs[1]&&bs[1].pressed))move.y--;}else{yaw+=((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0))*2*dt;pitch=Math.max(-1.5,Math.min(1.5,pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.5*dt));camera.position.set(0,1.6,0);camera.rotation.set(pitch,yaw,0,'YXZ');const f=camera.getWorldDirection(new V3());f.y=0;if(f.lengthSq())f.normalize();const r=new V3(-f.z,0,f.x);move.addScaledVector(f,(keys.KeyW?1:0)-(keys.KeyS?1:0)).addScaledVector(r,(keys.KeyD?1:0)-(keys.KeyA?1:0));move.y+=(keys.Space?1:0)-((keys.ControlLeft||keys.ControlRight||keys.KeyC)?1:0);}if(move.lengthSq())rig.position.addScaledVector(move.normalize(),sp*dt);hands.forEach(h=>{const gp=eff(h);h.w.copy(gp).applyAxisAngle(Y,rig.rotation.y).add(rig.position);h.m.position.copy(h.w);h.prev.copy(gp);h.init=true;});}
 // ---------- Multiplayer (PeerJS peer-to-peer, free public signaling) ----------
 let net='SOLO',remotes={},peer=null,conns=[],isHost=false,myId='me',itId=null,jt=0,tagUntil=0,ncd=0,lastSend=0,lastLi=false;
 const states={},multi=()=>Object.keys(remotes).length>0,localIt=()=>mods.alwaysit||(multi()?itId===myId:!aiIt);
@@ -390,7 +384,7 @@ setState();
 // ---------- Sound & music (Web Audio, fully synthesized; toggles in the mod menu) ----------
 let AC=null,master,musicG,sfxG,nbuf=null,nextT=0,stp=0;
 function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.55;master.connect(AC.destination);
-  musicG=AC.createGain();musicG.gain.value=.2;musicG.connect(master);sfxG=AC.createGain();sfxG.gain.value=.8;sfxG.connect(master);rec.audioDest=AC.createMediaStreamDestination();master.connect(rec.audioDest);}catch(e){}}
+  musicG=AC.createGain();musicG.gain.value=.2;musicG.connect(master);sfxG=AC.createGain();sfxG.gain.value=.8;sfxG.connect(master);}catch(e){}}
 function unlock(){audioInit();if(AC&&AC.state==='suspended')AC.resume();}
 ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,unlock));renderer.xr.addEventListener('sessionstart',unlock);
 function tone(f,d,type,v,when,slide,dest){if(!AC)return;const t=AC.currentTime+(when||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);
@@ -470,7 +464,7 @@ function petStep(dt){
     let d=Math.atan2(p.dir.x,p.dir.z)-p.rot;d=Math.atan2(Math.sin(d),Math.cos(d));p.rot+=d*Math.min(1,6*dt);
     p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<0){p.y=0;p.vy=0;}
     const bob=walking?Math.abs(Math.sin(now/130+p.sp*9))*.05*sz:0;
-    g.position.set(p.x,p.y+bob,p.z);g.rotation.set(0,p.rot,p.happy>0?Math.sin(now/90)*.1:0);g.scale.setScalar(sz*(p.t==='me'?1.35:1)*(1+(p.happy>0?Math.sin(now/110)*.05:0)));
+    g.position.set(p.x,p.y+bob,p.z);g.rotation.set(0,p.rot,p.happy>0?Math.sin(now/90)*.1:0);g.scale.setScalar(sz*(1+(p.happy>0?Math.sin(now/110)*.05:0)));
     if(p.cd<=0){const c=new V3(p.x,.5*sz+p.y,p.z),r=.5*sz+.1*(mods.bighands?3:1);if(hands.some(h=>h.m.position.distanceTo(c)<r))petIt(p);}
     p.snd-=dt;if(p.snd<=0){p.snd=8+Math.random()*14;if(dist<16)ASND[p.t](Math.max(.2,1-dist/16));}});}
 
@@ -574,10 +568,10 @@ const podGlass=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,2.2,16,1,true),ne
   podRing=new THREE.Mesh(new THREE.TorusGeometry(.8,.05,6,24),new THREE.MeshBasicMaterial({color:0x66ffee}));
 podGlass.position.set(POD.x,1.25,POD.z);podRing.rotation.x=Math.PI/2;podRing.position.set(POD.x,2.4,POD.z);
 scene.add(podGlass,podRing,cy(.95,.95,.16,mkM(0x2b3a4a),POD.x,.08,POD.z),cy(.95,.95,.12,mkM(0x2b3a4a),POD.x,2.4,POD.z));label('CLONING MACHINE',POD.x,3,POD.z,2.2);
-const cost=k=>0;
+const cost=k=>k==='me'?20:CC;
 function drawClone(){cx.fillStyle='#0b1420';cx.fillRect(0,0,768,768);cx.textAlign='left';cx.fillStyle='#7fe7ff';cx.font='bold 40px monospace';cx.fillText('CLONING MACHINE',24,56);
-  bananaIcon(cx,40,104,14);cx.fillStyle='#ffe135';cx.font='26px monospace';cx.fillText('FREE CLONING - FULL SIZE',24,112);
-  CL.forEach(([n,k],i)=>{const b=clb(i);cx.fillStyle=k==='clear'?'#8a3a3a':'#1f6b8a';cx.fillRect(...b);cx.fillStyle='#fff';cx.textAlign='center';cx.font='bold 34px monospace';cx.fillText(n,b[0]+174,b[1]+78);});cTex.needsUpdate=true;}
+  bananaIcon(cx,40,104,14);cx.fillStyle='#ffe135';cx.font='26px monospace';cx.fillText('x '+bananas+'   (pets '+CC+', you 20)',70,112);
+  CL.forEach(([n,k],i)=>{const b=clb(i);cx.fillStyle=k==='clear'?'#8a3a3a':bananas>=cost(k)?'#1f6b8a':'#3a4a55';cx.fillRect(...b);cx.fillStyle='#fff';cx.textAlign='center';cx.font='bold 34px monospace';cx.fillText(n,b[0]+174,b[1]+78);});cTex.needsUpdate=true;}
 // "clone yourself": a mini you (your color + equipped cosmetics) that follows you around
 BUILD.me=g=>{const m=new THREE.MeshStandardMaterial({color:myColor(),roughness:.6}),hm=eq.gold?goldM:m;
   g.add(pp(cubG,m,0,.72,0,.28,.5,.16));
@@ -594,7 +588,8 @@ function addPet(t,x,z){const g=new THREE.Group();BUILD[t](g);const p={g,t,x,z,di
 function cloneItem(i){const k=CL[i][1];
   if(k==='clear'){for(let j=pets.length-1;j>=0;j--)if(pets[j].clone){petG.remove(pets[j].g);pets.splice(j,1);}sfx.click();return;}
   if(pets.length>=45){dbg.textContent='Too many pets!';sfx.no();return;}
-  drawClone();const t=k==='random'?SP[(Math.random()*4)|0]:k;const pet=addPet(t,POD.x+(Math.random()-.5)*.5,POD.z);if(t==='me')pet.cur=true;cloneFx=1;sfx.buy();ASND[t](1);
+  if(bananas<cost(k)){sfx.no();dbg.textContent='Cloning costs '+cost(k)+' bananas';return;}
+  bananas-=cost(k);save();drawBana();drawShop();drawClone();const t=k==='random'?SP[(Math.random()*4)|0]:k;const pet=addPet(t,POD.x+(Math.random()-.5)*.5,POD.z);if(t==='me')pet.cur=true;cloneFx=1;sfx.buy();ASND[t](1);
   heart(new V3(POD.x-.3,1.6,POD.z));heart(new V3(POD.x+.3,1.9,POD.z));}
 function clonePress(p){const x=(p.x-PCLONE.x)/CS*768+384,y=(p.z-PCLONE.z)/CS*768+384;CL.forEach((it,i)=>{const b=clb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])cloneItem(i);});}
 function onPanel(w){return[[PC,PS],[PM,PS],[PSHOP,PS],[PCLONE,CS]].some(([c,s])=>Math.abs(w.x-c.x)<s/2&&Math.abs(w.z-c.z)<s/2);}
@@ -604,7 +599,7 @@ drawClone();
 const vrt=new THREE.WebGLRenderTarget(480,360),vcam=new THREE.PerspectiveCamera(60,4/3,.05,200),
   vfPlane=new THREE.Mesh(new THREE.PlaneGeometry(.42,.26),new THREE.MeshBasicMaterial({map:vrt.texture}));
 vfPlane.position.set(0,0,.155);camG.add(vfPlane);vcam.layers.enable(5);// viewfinder on the back of the camera
-let held=null,camVy=0,vf=0,bHeld=false;const rec={on:false,mr:null,chunks:[],ctx:null,img:null,buf:new Uint8Array(480*360*4),last:0,audioDest:null,mime:'',ext:'webm'};
+let held=null,camVy=0,vf=0,bHeld=false;const rec={on:false,mr:null,chunks:[],ctx:null,img:null,buf:new Uint8Array(480*360*4),last:0};
 const hudPlane=(w,h,x,y)=>{const c=document.createElement('canvas');c.width=256;c.height=Math.round(256*h/w);const g=c.getContext('2d'),t=new THREE.CanvasTexture(c),m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthTest:false}));
   m.position.set(x,y,-1);m.renderOrder=9;m.layers.set(6);m.visible=false;camera.add(m);return{m,g,t,c};};
 const recHud=hudPlane(.16,.05,.32,.22),macHud=hudPlane(.2,.05,.32,.15);
@@ -612,11 +607,9 @@ function hudTxt(o,txt,col){o.g.clearRect(0,0,o.c.width,o.c.height);o.g.fillStyle
 function camHold(){if(held){held=null;return;}if(headW().distanceTo(camG.position)<4){held='d';dbg.textContent='Camera: C photo, R record video, E drop';}}
 function recStart(){if(rec.on||!window.MediaRecorder){if(!window.MediaRecorder)dbg.textContent='Video recording is not supported here';return;}
   const c=document.createElement('canvas');c.width=480;c.height=360;rec.ctx=c.getContext('2d');rec.img=rec.ctx.createImageData(480,360);rec.ctx.fillRect(0,0,480,360);rec.chunks=[];
-  const vs=c.captureStream(30),mix=new MediaStream(vs.getVideoTracks());if(rec.audioDest)rec.audioDest.stream.getAudioTracks().forEach(t=>mix.addTrack(t));
-  const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'],mt=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
-  try{rec.mr=new MediaRecorder(mix,mt?{mimeType:mt,videoBitsPerSecond:6000000,audioBitsPerSecond:192000}:undefined);}catch(e){try{rec.mr=new MediaRecorder(mix);}catch(e2){dbg.textContent='Video recording failed to start';return;}}
-  rec.mime=rec.mr.mimeType||mt||'video/webm';rec.ext=rec.mime.includes('mp4')?'mp4':'webm';rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
-  rec.mr.onstop=()=>{const b=new Blob(rec.chunks,{type:rec.mime}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='branch-tag-video.'+rec.ext;a.click();dbg.textContent='Video + game audio saved as '+rec.ext.toUpperCase()+' ('+(b.size/1e6).toFixed(1)+' MB)';};
+  try{rec.mr=new MediaRecorder(c.captureStream(15),{mimeType:MediaRecorder.isTypeSupported('video/webm;codecs=vp8')?'video/webm;codecs=vp8':'video/webm'});}catch(e){try{rec.mr=new MediaRecorder(c.captureStream(15));}catch(e2){dbg.textContent='Video recording failed to start';return;}}
+  rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
+  rec.mr.onstop=()=>{const b=new Blob(rec.chunks,{type:'video/webm'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='branch-tag-video.webm';a.click();dbg.textContent='Video saved ('+(b.size/1e6).toFixed(1)+' MB)';};
   rec.mr.start();rec.on=true;recHud.m.visible=true;hudTxt(recHud,'● REC','#ff4a4a');sfx.click();}
 function recStop(){if(!rec.on)return;rec.on=false;recHud.m.visible=false;try{rec.mr.stop();}catch(e){}sfx.click();}
 function camRec(){if(rec.on)recStop();else if(held)recStart();}
@@ -700,11 +693,11 @@ function outCheck(dt){tpT=Math.max(0,tpT-dt*1.5);tpBeam.material.opacity=.1+.5*t
 const clock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const dt=(Math.min(clock.getDelta(),.05)||.016)*(mods.slowmo?.35:1);
-  if(mods.fly)flyStep(dt);else if(inVR())vrStep(dt);else deskStep(dt);
+  if(inVR())vrStep(dt);else deskStep(dt);
   outCheck(dt);petStep(dt);macroStep(dt);stickStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
   {const li=localIt();if(li!==lastLi){if(!li)tags++;lastLi=li;setState();sfx.tag();hands.forEach(h=>buzz(h,1,200));}}
   aiStep(dt);
-  renderer.render(scene,renderCam(dt));
+  renderer.render(scene,camera);
 });
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();tpCam.aspect=camera.aspect;tpCam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 </script></body></html>
