@@ -489,12 +489,12 @@ function mirrorStep(){if((mf++&1))return;const h=headW();if(Math.hypot(h.x-8,h.z
   mir.visible=false;mcam.position.set(8,1.6,6);mcam.lookAt(h);const xe=renderer.xr.enabled;renderer.xr.enabled=false;
   renderer.setRenderTarget(mrt);renderer.render(scene,mcam);renderer.setRenderTarget(null);renderer.xr.enabled=xe;mir.visible=true;}
 // saved wallet + cosmetics
-const ITEMS=[['TOP HAT',20,'tophat','hat'],['PARTY HAT',15,'party','hat'],['CROWN',50,'crown','hat'],['HALO',40,'halo','hat'],['PROPELLER CAP',30,'prop','hat'],['BANANA HAT',10,'bhat','hat'],['SUNGLASSES',25,'shades','face'],['CAPE',35,'cape','back'],['GOLD HANDS',60,'gold','hands']];
+const ITEMS=[['TOP HAT',2000,'tophat','hat'],['PARTY HAT',1500,'party','hat'],['CROWN',5000,'crown','hat'],['HALO',4000,'halo','hat'],['PROPELLER CAP',3000,'prop','hat'],['BANANA HAT',1000,'bhat','hat'],['SUNGLASSES',2500,'shades','face'],['CAPE',3500,'cape','back'],['GOLD HANDS',6000,'gold','hands']];
 let bananas=0,own={},eq={};
 try{const d=JSON.parse(localStorage.getItem('btag26')||'{}');bananas=(savedData.b??d.b)|0;own=savedData.o||d.o||{};eq=savedData.e||d.e||{};}catch(e){bananas=savedData.b|0;own=savedData.o||{};eq=savedData.e||{};}
 const save=()=>{try{const persistentMods={};['music','sfx','pets','nofog','fov','peaklight'].forEach(k=>persistentMods[k]=!!mods[k]);savedData={v:2,b:bananas,o:own,e:eq,cfg:{r:cfg.r,g:cfg.g,b:cfg.b,arm:cfg.arm,map:cfg.map,lobby:cfg.lobby},mods:persistentMods,portal:portalGunOn,peaklight:!!mods.peaklight,name:playerName};localStorage.setItem('btagSave',JSON.stringify(savedData));localStorage.setItem('btag26',JSON.stringify({b:bananas,o:own,e:eq}));}catch(e){}};
-function bananaIcon(c,x,y,s){c.strokeStyle='#ffe135';c.lineWidth=s*.45;c.lineCap='round';c.beginPath();c.arc(x,y-s*.2,s,Math.PI*.1,Math.PI*.9);c.stroke();c.strokeStyle='#8a5a1a';c.lineWidth=s*.22;c.beginPath();c.arc(x,y-s*.2,s,Math.PI*.9,Math.PI*.96);c.stroke();}
-// live banana counter on you (head-locked HUD, hidden from the mirror via layer 6)
+function bananaIcon(c,x,y,s){const g=c.createRadialGradient(x-s*.3,y-s*.35,s*.08,x,y,s);g.addColorStop(0,'#ffffff');g.addColorStop(.18,'#bdf5ff');g.addColorStop(.55,'#58aee8');g.addColorStop(1,'#183d68');c.fillStyle=g;c.beginPath();c.ellipse(x,y,s,s*.72,-.25,0,Math.PI*2);c.fill();c.strokeStyle='#d8fbff';c.lineWidth=Math.max(2,s*.12);c.stroke();}
+// live shiny pebble counter on you (head-locked HUD, hidden from the mirror via layer 6)
 const bc=document.createElement('canvas');bc.width=256;bc.height=64;const bx=bc.getContext('2d'),bTex=new THREE.CanvasTexture(bc),
   bhud=new THREE.Mesh(new THREE.PlaneGeometry(.26,.065),new THREE.MeshBasicMaterial({map:bTex,transparent:true,depthTest:false}));
 bhud.position.set(-.3,-.24,-1);bhud.renderOrder=9;bhud.layers.set(6);camera.add(bhud);
@@ -503,13 +503,13 @@ function drawBana(){bx.clearRect(0,0,256,64);bx.fillStyle='#000a';bx.fillRect(0,
 const PSHOP=new V3(4.4,.03,4.5),cb=i=>[24+(i%3)*330,130+((i/3)|0)*280,312,260];
 const sc=document.createElement('canvas');sc.width=sc.height=1024;const sx=sc.getContext('2d'),sTex=new THREE.CanvasTexture(sc),
   spanel=new THREE.Mesh(new THREE.PlaneGeometry(PS,PS),new THREE.MeshBasicMaterial({map:sTex}));spanel.rotation.x=-Math.PI/2;spanel.position.copy(PSHOP);scene.add(spanel);
-function drawShop(){sx.fillStyle='#161208';sx.fillRect(0,0,1024,1024);sx.textAlign='left';sx.fillStyle='#ffe135';sx.font='bold 46px monospace';sx.fillText('BANANA SHOP',24,76);
+function drawShop(){sx.fillStyle='#161208';sx.fillRect(0,0,1024,1024);sx.textAlign='left';sx.fillStyle='#ffe135';sx.font='bold 46px monospace';sx.fillText('SHINY PEBBLE SHOP',24,76);
   bananaIcon(sx,700,58,22);sx.fillText('x '+bananas,740,76);
   ITEMS.forEach(([n,pr,k],i)=>{const b=cb(i),o=own[k],e=eq[k];sx.fillStyle=e?'#2fbf71':o?'#3a4a8a':bananas>=pr?'#6b5a1a':'#4a3a3a';sx.fillRect(...b);
     sx.fillStyle='#fff';sx.textAlign='center';sx.font='bold 28px monospace';sx.fillText(n,b[0]+156,b[1]+70);sx.font='bold 30px monospace';sx.fillText(e?'EQUIPPED':o?'OWNED - TAP':'BUY',b[0]+156,b[1]+170);
     if(!o){bananaIcon(sx,b[0]+110,b[1]+225,16);sx.fillText('x '+pr,b[0]+190,b[1]+235);}});sTex.needsUpdate=true;}
 function shopItem(i){const[n,pr,k,sl]=ITEMS[i];
-  if(!own[k]){if(bananas<pr){sfx.no();dbg.textContent='Not enough bananas for '+n;return;}bananas-=pr;own[k]=1;sfx.buy();}
+  if(!own[k]){if(bananas<pr){sfx.no();dbg.textContent='Not enough shiny pebbles for '+n;return;}bananas-=pr;own[k]=1;sfx.buy();}
   if(eq[k])delete eq[k];else{ITEMS.forEach(it=>{if(it[3]===sl)delete eq[it[2]];});eq[k]=1;sfx.click();}
   applyCosm();save();drawShop();drawBana();drawClone();}
 function shopPress(p){const x=(p.x-PSHOP.x)/PS*1024+512,y=(p.z-PSHOP.z)/PS*1024+512;ITEMS.forEach((it,i)=>{const b=cb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])shopItem(i);});}
@@ -538,10 +538,10 @@ function syncRemoteLook(r,s){if(!s)return;if(s.n&&r.lastName!==s.n){r.lastName=s
 
 function headStep(dt){const h=headW();headG.position.copy(h);camera.getWorldQuaternion(headG.quaternion);
   const bl=COS.prop.userData.blade;bl.rotation.y+=dt*20;mirrorStep();cameraStep(dt);}
-// bananas scattered around every map
-const banList=[],banG=new THREE.TorusGeometry(.17,.045,6,10,Math.PI*.85);let banMap=-1;
+// shiny pebbles scattered around every map
+const banList=[],banG=new THREE.IcosahedronGeometry(.18,1),pebbleM=new THREE.MeshPhongMaterial({color:0x66c8ff,emissive:0x0b3155,emissiveIntensity:.65,shininess:140,specular:0xffffff,flatShading:true});let banMap=-1;
 function surfY(x,z){let y=0;for(const b of C)if(x>b.min.x&&x<b.max.x&&z>b.min.z&&z<b.max.z)y=Math.max(y,b.max.y);return y;}
-function banana(){const g=new THREE.Group(),m=new THREE.Mesh(banG,yel);m.rotation.z=-Math.PI/2-Math.PI*.425;g.add(m);g.rotation.z=.3;return g;}
+function banana(){const g=new THREE.Group(),m=new THREE.Mesh(banG,pebbleM),glow=new THREE.PointLight(0x66ddff,.35,2.4,2);m.scale.set(1.25,.72,1);m.rotation.set(.35,.2,-.2);glow.position.y=.08;g.add(m,glow);return g;}
 let tops=[],banT=3;
 function spawnOne(){let x,y,z;
   if(VOID||Math.random()<.5){const b=tops[(Math.random()*tops.length)|0];if(!b)return;x=b.min.x+Math.random()*(b.max.x-b.min.x);z=b.min.z+Math.random()*(b.max.z-b.min.z);y=b.max.y;}
@@ -551,8 +551,8 @@ function spawnBananas(){banList.forEach(b=>scene.remove(b));banList.length=0;top
 function bananaStep(dt){if(banMap!==mapId){spawnBananas();banMap=mapId;}
   banT-=dt;if(banT<=0){banT=2.5+Math.random()*4;if(banList.length<80)spawnOne();}// new bananas keep appearing
   const hd=headW(),t=performance.now()/1000,hr=.45+.1*(mods.bighands?3:1);
-  for(let i=banList.length-1;i>=0;i--){const g=banList[i],p=g.position;g.rotation.y+=2.2*dt;g.children[0].position.y=Math.sin(t*2.5+i)*.08;
-    if(hd.distanceTo(p)<.9||hands.some(h=>h.m.position.distanceTo(p)<hr)||(stickTip&&stickTip.distanceTo(p)<.7)){scene.remove(g);banList.splice(i,1);bananas++;save();drawBana();drawShop();drawClone();sfx.coin();hands.forEach(h=>buzz(h,.25,30));}}}
+  for(let i=banList.length-1;i>=0;i--){const g=banList[i],p=g.position;g.rotation.y+=2.2*dt;g.rotation.z=Math.sin(t*1.7+i)*.15;g.children[0].position.y=Math.sin(t*2.5+i)*.08;
+    if(hd.distanceTo(p)<.9||hands.some(h=>h.m.position.distanceTo(p)<hr)||(stickTip&&stickTip.distanceTo(p)<.7)){scene.remove(g);banList.splice(i,1);bananas+=100;save();drawBana();drawShop();drawClone();sfx.coin();hands.forEach(h=>buzz(h,.25,30));}}}
 applyCosm();drawShop();drawBana();
 
 // ---------- Photo camera + photo wall, and the pet cloning machine (back of the spawn area) ----------
@@ -575,7 +575,7 @@ function snapPhoto(dl){if(snapCd>0)return;snapCd=1.2;const i=photoN++%4;if(held)
     for(let y=0;y<512;y++)id.data.set(buf.subarray((511-y)*2048,(512-y)*2048),y*2048);g.putImageData(id,0,0);const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='branch-tag-photo.png';a.click();}catch(e){}}
   renderer.setRenderTarget(null);renderer.xr.enabled=xe;flash=1;sfx.shutter();dbg.textContent='Photo '+(i+1)+' saved to the photo wall'+(dl?' + downloaded':'');}
 addEventListener('keydown',e=>{if(e.code==='KeyC'&&!e.repeat&&!inVR())snapPhoto(e.shiftKey);});
-// cloning machine: pay bananas to clone a pet
+// cloning machine: pay shiny pebbles to clone a pet
 const CC=8,CS=2.4,PCLONE=new V3(-5.5,.03,11.8),POD=new V3(-5.5,0,14.1),CL=[['SHEEP','sheep'],['COW','cow'],['PIG','pig'],['CHICKEN','chicken'],['RANDOM','random'],['CLONE YOU (20)','me'],['CLEAR CLONES','clear']],clb=i=>[24+(i%2)*372,150+((i/2)|0)*144,348,128];
 const cc=document.createElement('canvas');cc.width=cc.height=768;const cx=cc.getContext('2d'),cTex=new THREE.CanvasTexture(cc),
   cpanel=new THREE.Mesh(new THREE.PlaneGeometry(CS,CS),new THREE.MeshBasicMaterial({map:cTex}));cpanel.rotation.x=-Math.PI/2;cpanel.position.copy(PCLONE);scene.add(cpanel);
@@ -603,7 +603,7 @@ function addPet(t,x,z){const g=new THREE.Group();BUILD[t](g);const p={g,t,x,z,di
 function cloneItem(i){const k=CL[i][1];
   if(k==='clear'){for(let j=pets.length-1;j>=0;j--)if(pets[j].clone){petG.remove(pets[j].g);pets.splice(j,1);}sfx.click();return;}
   if(pets.length>=45){dbg.textContent='Too many pets!';sfx.no();return;}
-  if(bananas<cost(k)){sfx.no();dbg.textContent='Cloning costs '+cost(k)+' bananas';return;}
+  if(bananas<cost(k)){sfx.no();dbg.textContent='Cloning costs '+cost(k)+' shiny pebbles';return;}
   bananas-=cost(k);save();drawBana();drawShop();drawClone();const t=k==='random'?SP[(Math.random()*4)|0]:k;const pet=addPet(t,POD.x+(Math.random()-.5)*.5,POD.z);if(t==='me')pet.cur=true;cloneFx=1;sfx.buy();ASND[t](1);
   heart(new V3(POD.x-.3,1.6,POD.z));heart(new V3(POD.x+.3,1.9,POD.z));}
 function clonePress(p){const x=(p.x-PCLONE.x)/CS*768+384,y=(p.z-PCLONE.z)/CS*768+384;CL.forEach((it,i)=>{const b=clb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])cloneItem(i);});}
