@@ -541,7 +541,7 @@ function headStep(dt){const h=headW();headG.position.copy(h);camera.getWorldQuat
 // shiny pebbles scattered around every map
 const banList=[],banG=new THREE.IcosahedronGeometry(.18,1),pebbleM=new THREE.MeshPhongMaterial({color:0x66c8ff,emissive:0x0b3155,emissiveIntensity:.65,shininess:140,specular:0xffffff,flatShading:true});let banMap=-1;
 function surfY(x,z){let y=0;for(const b of C)if(x>b.min.x&&x<b.max.x&&z>b.min.z&&z<b.max.z)y=Math.max(y,b.max.y);return y;}
-function banana(){const g=new THREE.Group(),m=new THREE.Mesh(banG,pebbleM),glow=new THREE.PointLight(0x66ddff,.35,2.4,2);m.scale.set(1.25,.72,1);m.rotation.set(.35,.2,-.2);glow.position.y=.08;g.add(m,glow);return g;}
+function banana(){const g=new THREE.Group(),m=new THREE.Mesh(banG,pebbleM);m.scale.set(1.25,.72,1);m.rotation.set(.35,.2,-.2);g.add(m);return g;}
 let tops=[],banT=3;
 function spawnOne(){let x,y,z;
   if(VOID||Math.random()<.5){const b=tops[(Math.random()*tops.length)|0];if(!b)return;x=b.min.x+Math.random()*(b.max.x-b.min.x);z=b.min.z+Math.random()*(b.max.z-b.min.z);y=b.max.y;}
