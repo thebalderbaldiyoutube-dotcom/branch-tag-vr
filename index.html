@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Branch Tag VR</title>
+<title>Branch Tag VR - Clean Rig</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#9ad0ec;font-family:system-ui,sans-serif}
 canvas{display:block}
@@ -132,7 +132,7 @@ const hands=[0,1].map(i=>{
   const h={m,arm,g,src:null,prev:new V3(),w:new V3(),touch:false,init:false};
   c.addEventListener('connected',e=>h.src=e.data);c.addEventListener('disconnected',()=>h.src=null);
   return h;});
-const torso=new THREE.Mesh(new THREE.BoxGeometry(.28,.5,.16),pMat);scene.add(torso);
+const torso=new THREE.Mesh(new THREE.SphereGeometry(.34,12,9),pMat);torso.scale.set(1.05,1.25,.8);scene.add(torso);const chest=new THREE.Mesh(new THREE.SphereGeometry(.25,12,8),pMat);chest.scale.set(1.05,.85,.7);scene.add(chest);
 function link(m,a,b){_t.subVectors(b,a);const l=_t.length()||.01;m.position.copy(a).addScaledVector(_t,.5);m.scale.y=l;m.quaternion.setFromUnitVectors(Y,_t.divideScalar(l));}
 function buzz(h,s,ms){try{const g=h.src&&h.src.gamepad;if(!g)return;const a=g.hapticActuators&&g.hapticActuators[0];
   if(a&&a.pulse)a.pulse(s,ms);else if(g.vibrationActuator)g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:s,weakMagnitude:s});}catch(e){}}
@@ -150,9 +150,9 @@ function ropeStep(h,A,dt){// noodle arm = verlet rope pinned at shoulder and han
 function avatar(dt){
   const hd=headW();
   if(mods.rainbow&&!localIt())pMat.color.setHSL((performance.now()/1500)%1,.85,.55);
-  torso.position.set(hd.x,hd.y-.38,hd.z);torso.rotation.y=_e.setFromQuaternion(camera.quaternion,'YXZ').y+rig.rotation.y;torso.updateMatrixWorld();
+  torso.position.set(hd.x,hd.y-.42,hd.z);chest.position.set(hd.x,hd.y-.43,hd.z-.015);torso.rotation.y=_e.setFromQuaternion(camera.quaternion,'YXZ').y+rig.rotation.y;chest.rotation.y=torso.rotation.y;torso.updateMatrixWorld();chest.updateMatrixWorld();
   hands.forEach(h=>{const side=torso.worldToLocal(h.m.position.clone()).x<0?-.17:.17;
-    const sh=torso.localToWorld(new V3(side,.2,0));link(h.arm,sh,h.m.position);h.m.scale.setScalar(mods.bighands?3:1);h.arm.visible=!mods.noodle;
+    const sh=torso.localToWorld(new V3(side,.18,0)),vd=h.m.position.clone().sub(sh),vis=sh.clone().addScaledVector(vd,Math.min(1,ARM_VISUAL_MAX/Math.max(.001,vd.length())));link(h.arm,sh,vis);h.m.scale.setScalar(mods.bighands?3:1.35);h.arm.visible=!mods.noodle;
     if(h.beads)ropeStep(h,sh,dt||.016);});// noodle arms: rope
 }
 
@@ -259,10 +259,11 @@ function pressAt(p){if(Math.abs(p.x-PM.x)<PS/2&&Math.abs(p.z-PM.z)<PS/2){modPres
   if(Math.abs(p.x-PCLONE.x)<CS/2&&Math.abs(p.z-PCLONE.z)<CS/2){clonePress(p);return;}const x=(p.x-PC.x)/PS*1024+512,y=(p.z-PC.z)/PS*1024+512,inn=b=>x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3];
   FIELDS.forEach((f,i)=>{if(inn(fb(i))){sel=i;buf='';sfx.key();drawPanel();}});
   KEYS.forEach((k,i)=>{if(inn(kb(i)))typeKey(k);});}
+const petG=new THREE.Group(),pets=[],hearts=[];
 addEventListener('mousedown',e=>{if(inVR())return;drag=true;// desktop: aim (or point with the cursor) at the floor screen + click
   const rc=new THREE.Raycaster();rc.setFromCamera(document.pointerLockElement?new THREE.Vector2(0,0):new THREE.Vector2(e.clientX/innerWidth*2-1,1-e.clientY/innerHeight*2),camera);
   if(fp.visible){const hi=rc.intersectObject(fp)[0];if(hi&&hi.uv){modAt(hi.uv.x*1024,(1-hi.uv.y)*1024);return;}}
-  const pi=rc.intersectObjects(petG.children,true)[0];// click an animal to pet it
+  const pi=petG.parent?rc.intersectObjects(petG.children,true)[0]:null;// click an animal to pet it
   if(pi&&pi.distance<10){let ob=pi.object;while(ob&&!ob.userData.pet)ob=ob.parent;if(ob){petIt(ob.userData.pet);return;}}
   const o=rc.ray.origin,d=rc.ray.direction;
   if(d.y<-1e-3){const t=(PC.y-o.y)/d.y;if(t>0&&t<7)pressAt(o.clone().addScaledVector(d,t));}});
@@ -271,19 +272,19 @@ addEventListener('keydown',e=>{const d=e.code==='KeyQ'?1:e.code==='KeyP'?-1:0;//
 
 // ---------- Mod menu (floor screen left of the computer + pop-up menu; desktop keys 1-0, M) ----------
 const MODS=[['NOODLE ARMS','noodle'],['LOW GRAVITY','lowg'],['SUPER FLING','fling'],['ZERO GRAVITY','zerog'],['HEAVY GRAVITY','heavy'],['SPEED BOOST','speed'],['BOUNCY WALLS','bouncy'],['BIG HANDS','bighands'],
-  ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['THIRD PERSON','third'],['FLY','fly'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
+  ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
   ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['STICK (OWNER ONLY)','stick']];
 const ACT=['respawn','randmap','mrec','mplay','mslot'];
-const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>[24+(i%3)*330,112+((i/3)|0)*74,312,66];
+const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>{const cols=4,w=238,g=10,rows=Math.ceil(MODS.length/cols),rh=Math.min(94,(1024-104)/rows);return[20+(i%cols)*(w+g),92+((i/cols)|0)*rh,w,rh-7];};
 mods.music=mods.sfx=mods.pets=true;
-const armK=()=>ARM;// noodle arms are visual only (rope); reach is unchanged
+const armK=()=>ARM,ARM_VISUAL_MAX=1.05;// physics reach stays fully adjustable; only rendered arms are clamped
 const mac={slot:0,rec:false,play:false,t:0,i:0,acc:0,map:0,lbl:'',data:[[],[],[]]};
 const mc=document.createElement('canvas');mc.width=1024;mc.height=1024;const mx=mc.getContext('2d'),mTex=new THREE.CanvasTexture(mc);
 const mpanel=new THREE.Mesh(new THREE.PlaneGeometry(PS,PS),new THREE.MeshBasicMaterial({map:mTex}));mpanel.rotation.x=-Math.PI/2;mpanel.position.copy(PM);scene.add(mpanel);
 const FP=1.8,fp=new THREE.Mesh(new THREE.PlaneGeometry(FP,FP),new THREE.MeshBasicMaterial({map:mTex,side:THREE.DoubleSide,depthTest:false}));fp.visible=false;fp.renderOrder=8;scene.add(fp);// pop-up copy of the menu
 function drawMods(){mx.fillStyle='#1a0b1a';mx.fillRect(0,0,1024,1024);mx.textAlign='left';mx.fillStyle='#ff9bff';mx.font='bold 46px monospace';mx.fillText('MOD MENU',24,76);
   MODS.forEach(([n,k],i)=>{const b=mb(i),on=mods[k],act=ACT.includes(k);mx.fillStyle=act?'#3a4a8a':on?'#2fbf71':'#6b2a3a';mx.fillRect(...b);mx.fillStyle='#fff';mx.textAlign='left';
-    mx.font='bold 18px monospace';mx.fillText((i<10?'['+(i+1)%10+'] ':'')+(k==='mslot'?'MACRO SLOT '+(mac.slot+1):n),b[0]+12,b[1]+26);mx.font='bold 24px monospace';mx.fillText(k==='mrec'&&mac.rec?'RECORDING...':k==='mplay'&&mac.play?'PLAYING...':act?'TAP':on?'ON':'OFF',b[0]+12,b[1]+55);});
+    mx.font='bold 15px monospace';mx.fillText((i<10?'['+(i+1)%10+'] ':'')+(k==='mslot'?'MACRO SLOT '+(mac.slot+1):n),b[0]+9,b[1]+22);mx.font='bold 19px monospace';mx.fillText(k==='mrec'&&mac.rec?'RECORDING...':k==='mplay'&&mac.play?'PLAYING...':act?'TAP':on?'ON':'OFF',b[0]+9,b[1]+48);});
   mTex.needsUpdate=true;}
 function toggleMod(k){
   if(k==='stick'&&!mods.stick&&!isOwner()){dbg.textContent='Only the lobby owner has the stick';sfx.no();return;}
@@ -293,7 +294,6 @@ function toggleMod(k){
   mods[k]=!mods[k];sfx.mod(mods[k]);
   if(k==='nofog'){scene.fog.near=mods.nofog?1e5:25;scene.fog.far=mods.nofog?2e5:110;}
   if(k==='fov'){camera.fov=mods.fov?105:70;camera.updateProjectionMatrix();}
-  if(k==='third')setThirdPerson(mods.third);
   setState();drawMods();dbg.textContent=MODS.find(m=>m[1]===k)[0]+': '+(mods[k]?'ON':'OFF');}
 function modAt(x,y){MODS.forEach(([n,k],i)=>{const b=mb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])toggleMod(k);});}
 function modPress(p){modAt((p.x-PM.x)/PS*1024+512,(p.z-PM.z)/PS*1024+512);}
@@ -309,17 +309,10 @@ let snapHeld=false,menuHeld=false;
 const headW=()=>camera.position.clone().applyAxisAngle(Y,rig.rotation.y).add(rig.position);
 function turn(d){const c=camera.position,th=rig.rotation.y,a=c.clone().applyAxisAngle(Y,th),b=c.clone().applyAxisAngle(Y,th+d);rig.position.add(a.sub(b));rig.rotation.y=th+d;}// pivot around your head
 
-// ---------- Third person + fly mods ----------
-const tpCam=new THREE.PerspectiveCamera(70,camera.aspect,.05,300),tpLook=new V3(),tpWant=new V3();let tpLast=false;
-function setThirdPerson(on){on=!!on&&!inVR();tpLast=on;const layer0=(o,yes)=>o.traverse(x=>yes?x.layers.enable(0):x.layers.disable(0));layer0(headG,on);layer0(cape,on);hands.forEach(h=>{layer0(h.m,on);layer0(h.arm,on);if(h.beads)h.beads.forEach(b=>layer0(b,on));});}
-function renderCam(dt){const on=!!mods.third&&!inVR();if(on!==tpLast)setThirdPerson(on);if(!on)return camera;const h=headW(),q=camera.getWorldQuaternion(new THREE.Quaternion()),back=new V3(0,.38,3.2).applyQuaternion(q);tpWant.copy(h).add(back);tpCam.position.lerp(tpWant,Math.min(1,10*dt));tpLook.copy(h).add(new V3(0,-.18,0));tpCam.lookAt(tpLook);tpCam.fov=camera.fov;tpCam.aspect=camera.aspect;tpCam.updateProjectionMatrix();return tpCam;}
-function flyStep(dt){vel.set(0,0,0);prevN=0;const sp=(keys.ShiftLeft||keys.ShiftRight)?14:7,move=new V3();if(inVR()){renderer.xr.getCamera(camera);const lh=hands.find(h=>h.src&&h.src.handedness==='left'),g=lh&&lh.src.gamepad,ax=g&&g.axes||[],x=ax[2]||ax[0]||0,z=ax[3]||ax[1]||0,f=camera.getWorldDirection(new V3());f.y=0;if(f.lengthSq())f.normalize();const r=new V3(-f.z,0,f.x);move.addScaledVector(r,x).addScaledVector(f,-z);const bs=g&&g.buttons||[];if((bs[4]&&bs[4].pressed)||(bs[0]&&bs[0].pressed))move.y++;if((bs[5]&&bs[5].pressed)||(bs[1]&&bs[1].pressed))move.y--;}else{yaw+=((keys.ArrowLeft?1:0)-(keys.ArrowRight?1:0))*2*dt;pitch=Math.max(-1.5,Math.min(1.5,pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.5*dt));camera.position.set(0,1.6,0);camera.rotation.set(pitch,yaw,0,'YXZ');const f=camera.getWorldDirection(new V3());f.y=0;if(f.lengthSq())f.normalize();const r=new V3(-f.z,0,f.x);move.addScaledVector(f,(keys.KeyW?1:0)-(keys.KeyS?1:0)).addScaledVector(r,(keys.KeyD?1:0)-(keys.KeyA?1:0));move.y+=(keys.Space?1:0)-((keys.ControlLeft||keys.ControlRight||keys.KeyC)?1:0);}if(move.lengthSq())rig.position.addScaledVector(move.normalize(),sp*dt);hands.forEach(h=>{const gp=eff(h);h.w.copy(gp).applyAxisAngle(Y,rig.rotation.y).add(rig.position);h.m.position.copy(h.w);h.prev.copy(gp);h.init=true;});}
 // ---------- Multiplayer (PeerJS peer-to-peer, free public signaling) ----------
 let net='SOLO',remotes={},peer=null,conns=[],isHost=false,myId='me',itId=null,jt=0,tagUntil=0,ncd=0,lastSend=0,lastLi=false;
 const states={},multi=()=>Object.keys(remotes).length>0,localIt=()=>mods.alwaysit||(multi()?itId===myId:!aiIt);
-function mkRemote(id){const mat=new THREE.MeshStandardMaterial({roughness:.6}),g=new THREE.Group();
-  [new THREE.SphereGeometry(.2,10,8),new THREE.BoxGeometry(.28,.5,.16),new THREE.SphereGeometry(HR,10,8),new THREE.SphereGeometry(HR,10,8)].forEach(geo=>g.add(new THREE.Mesh(geo,mat)));
-  scene.add(g);return remotes[id]={g,mat,s:null};}
+function mkRemote(id){const mat=new THREE.MeshStandardMaterial({roughness:.65}),g=new THREE.Group(),head=new THREE.Mesh(new THREE.SphereGeometry(.25,10,8),mat),body=new THREE.Mesh(new THREE.SphereGeometry(.34,10,8),mat),lh=new THREE.Mesh(new THREE.SphereGeometry(.135,10,8),mat),rh=lh.clone(),la=new THREE.Mesh(cyl,mat),ra=new THREE.Mesh(cyl,mat);body.scale.set(1.05,1.25,.8);g.add(head,body,lh,rh,la,ra);scene.add(g);return remotes[id]={g,mat,s:null,head,body,lh,rh,la,ra};}
 function syncRemotes(s){let ch=false;
   for(const id in s){if(id===myId||remotes[id])continue;mkRemote(id);ch=true;}
   for(const id in remotes){if(s[id])remotes[id].s=s[id];else{scene.remove(remotes[id].g);if(remotes[id].stick)scene.remove(remotes[id].stick);delete remotes[id];ch=true;}}
@@ -356,8 +349,7 @@ function netTick(now){// 15 Hz: clients send pose to host, host broadcasts every
 }
 function netStep(dt){
   for(const id in remotes){const r=remotes[id],s=r.s;if(!s)continue;const p=s.p,k=Math.min(1,15*dt),c=r.g.children;
-    [[p[0],p[1],p[2]],[p[0],p[1]-.38,p[2]],[p[3],p[4],p[5]],[p[6],p[7],p[8]]].forEach((t,i)=>c[i].position.lerp(_t.set(t[0],t[1],t[2]),k));
-    c[1].rotation.y=p[9];r.g.visible=!s.iv;
+    [[p[0],p[1],p[2]],[p[0],p[1]-.42,p[2]],[p[3],p[4],p[5]],[p[6],p[7],p[8]]].forEach((t,i)=>c[i].position.lerp(_t.set(t[0],t[1],t[2]),k));c[1].rotation.y=p[9];const ls=new V3(p[0]-.2,p[1]-.18,p[2]),rs=new V3(p[0]+.2,p[1]-.18,p[2]);link(c[4],ls,c[2].position);link(c[5],rs,c[3].position);r.g.visible=!s.iv;
     if(s.sk){if(!r.stick){r.stick=new THREE.Mesh(stickG,stickM);scene.add(r.stick);}const A=new V3(s.sk[0],s.sk[1],s.sk[2]),T=new V3(s.sk[3],s.sk[4],s.sk[5]);r.stick.visible=true;r.stick.position.copy(A).add(T).multiplyScalar(.5);r.stick.quaternion.setFromUnitVectors(Y,T.clone().sub(A).normalize());}else if(r.stick)r.stick.visible=false;const it=id===itId;r.mat.color.set(it?0xff4a12:s.c);r.mat.emissive.set(it?0xff2a00:0);}
   ncd-=dt;
   if((itId===myId||mods.alwaysit)&&ncd<=0){const hd=headW();
@@ -390,7 +382,7 @@ setState();
 // ---------- Sound & music (Web Audio, fully synthesized; toggles in the mod menu) ----------
 let AC=null,master,musicG,sfxG,nbuf=null,nextT=0,stp=0;
 function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.55;master.connect(AC.destination);
-  musicG=AC.createGain();musicG.gain.value=.2;musicG.connect(master);sfxG=AC.createGain();sfxG.gain.value=.8;sfxG.connect(master);rec.audioDest=AC.createMediaStreamDestination();master.connect(rec.audioDest);}catch(e){}}
+  musicG=AC.createGain();musicG.gain.value=.2;musicG.connect(master);sfxG=AC.createGain();sfxG.gain.value=.8;sfxG.connect(master);}catch(e){}}
 function unlock(){audioInit();if(AC&&AC.state==='suspended')AC.resume();}
 ['pointerdown','keydown','touchstart'].forEach(ev=>addEventListener(ev,unlock));renderer.xr.addEventListener('sessionstart',unlock);
 function tone(f,d,type,v,when,slide,dest){if(!AC)return;const t=AC.currentTime+(when||0),o=AC.createOscillator(),g=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);
@@ -419,7 +411,7 @@ setInterval(musicTick,100);
 setInterval(()=>{if(mods.sfx&&AC&&AC.state==='running'&&mapId===0&&Math.random()<.5){const f=1800+Math.random()*1600;tone(f,.09,'sine',.06,0,500);tone(f*1.2,.09,'sine',.05,.12,300);}},2500);// forest birds
 
 // ---------- Pets: sheep, cows, pigs & chickens wander around; touch them to pet (hearts + noises) ----------
-const petG=new THREE.Group(),pets=[],hearts=[];scene.add(petG);let petMap=-1;
+scene.add(petG);let petMap=-1;
 const sphG=new THREE.IcosahedronGeometry(1,1),cubG=new THREE.BoxGeometry(1,1,1),PMt=c=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:0}),
   MW=PMt(0xf6f6f0),WOOL=PMt(0xfffff8),DK=PMt(0x2d2a2a),PK=PMt(0xf7a8b8),PK2=PMt(0xe58aa0),OR=PMt(0xffa83a),RD=PMt(0xe03a3a),EYE=PMt(0x111111),SH=new THREE.MeshBasicMaterial({color:0xffffff}),BL=PMt(0xff9db0);
 const pp=(g,m,x,y,z,sx,sy,sz)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy===undefined?sx:sy,sz===undefined?(sy===undefined?sx:sz):sz);return o;};
@@ -470,7 +462,7 @@ function petStep(dt){
     let d=Math.atan2(p.dir.x,p.dir.z)-p.rot;d=Math.atan2(Math.sin(d),Math.cos(d));p.rot+=d*Math.min(1,6*dt);
     p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<0){p.y=0;p.vy=0;}
     const bob=walking?Math.abs(Math.sin(now/130+p.sp*9))*.05*sz:0;
-    g.position.set(p.x,p.y+bob,p.z);g.rotation.set(0,p.rot,p.happy>0?Math.sin(now/90)*.1:0);g.scale.setScalar(sz*(p.t==='me'?1.35:1)*(1+(p.happy>0?Math.sin(now/110)*.05:0)));
+    g.position.set(p.x,p.y+bob,p.z);g.rotation.set(0,p.rot,p.happy>0?Math.sin(now/90)*.1:0);g.scale.setScalar(sz*(1+(p.happy>0?Math.sin(now/110)*.05:0)));
     if(p.cd<=0){const c=new V3(p.x,.5*sz+p.y,p.z),r=.5*sz+.1*(mods.bighands?3:1);if(hands.some(h=>h.m.position.distanceTo(c)<r))petIt(p);}
     p.snd-=dt;if(p.snd<=0){p.snd=8+Math.random()*14;if(dist<16)ASND[p.t](Math.max(.2,1-dist/16));}});}
 
@@ -514,8 +506,7 @@ sfx.no=()=>{if(mods.sfx)tone(150,.2,'sawtooth',.25,0,-50);};
 const headG=new THREE.Group(),COS={};scene.add(headG);
 const mkM=(c,e)=>new THREE.MeshPhongMaterial({color:c,emissive:e||0,flatShading:true,shininess:25}),goldM=mkM(0xffd24a,0x553d00),
   cy=(rt,rb,h,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,10),m);o.position.set(x,y,z);return o;};
-headG.add(new THREE.Mesh(new THREE.SphereGeometry(.2,12,10),pMat));
-[-1,1].forEach(s=>{headG.add(pp(sphG,EYE,s*.07,.03,-.17,.035));headG.add(pp(sphG,SH,s*.07,.045,-.2,.012));});
+const plainHead=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),pMat);headG.add(plainHead);
 const addC=(k,o)=>{o.visible=false;COS[k]=o;headG.add(o);return o;},blk=mkM(0x1b1b1f),red=mkM(0xd23a3a),yel=mkM(0xffe135,0x5a4a00),pnk=mkM(0xff6fa5);
 {const g=new THREE.Group();g.add(cy(.15,.15,.22,blk,0,.32,0),cy(.26,.26,.025,blk,0,.21,0),cy(.155,.155,.04,red,0,.25,0));addC('tophat',g);}
 {const g=new THREE.Group();g.add(cy(0,.12,.3,pnk,0,.34,0),pp(sphG,yel,0,.5,0,.03));addC('party',g);}
@@ -574,15 +565,14 @@ const podGlass=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,2.2,16,1,true),ne
   podRing=new THREE.Mesh(new THREE.TorusGeometry(.8,.05,6,24),new THREE.MeshBasicMaterial({color:0x66ffee}));
 podGlass.position.set(POD.x,1.25,POD.z);podRing.rotation.x=Math.PI/2;podRing.position.set(POD.x,2.4,POD.z);
 scene.add(podGlass,podRing,cy(.95,.95,.16,mkM(0x2b3a4a),POD.x,.08,POD.z),cy(.95,.95,.12,mkM(0x2b3a4a),POD.x,2.4,POD.z));label('CLONING MACHINE',POD.x,3,POD.z,2.2);
-const cost=k=>0;
+const cost=k=>k==='me'?20:CC;
 function drawClone(){cx.fillStyle='#0b1420';cx.fillRect(0,0,768,768);cx.textAlign='left';cx.fillStyle='#7fe7ff';cx.font='bold 40px monospace';cx.fillText('CLONING MACHINE',24,56);
-  bananaIcon(cx,40,104,14);cx.fillStyle='#ffe135';cx.font='26px monospace';cx.fillText('FREE CLONING - FULL SIZE',24,112);
-  CL.forEach(([n,k],i)=>{const b=clb(i);cx.fillStyle=k==='clear'?'#8a3a3a':'#1f6b8a';cx.fillRect(...b);cx.fillStyle='#fff';cx.textAlign='center';cx.font='bold 34px monospace';cx.fillText(n,b[0]+174,b[1]+78);});cTex.needsUpdate=true;}
+  bananaIcon(cx,40,104,14);cx.fillStyle='#ffe135';cx.font='26px monospace';cx.fillText('x '+bananas+'   (pets '+CC+', you 20)',70,112);
+  CL.forEach(([n,k],i)=>{const b=clb(i);cx.fillStyle=k==='clear'?'#8a3a3a':bananas>=cost(k)?'#1f6b8a':'#3a4a55';cx.fillRect(...b);cx.fillStyle='#fff';cx.textAlign='center';cx.font='bold 34px monospace';cx.fillText(n,b[0]+174,b[1]+78);});cTex.needsUpdate=true;}
 // "clone yourself": a mini you (your color + equipped cosmetics) that follows you around
 BUILD.me=g=>{const m=new THREE.MeshStandardMaterial({color:myColor(),roughness:.6}),hm=eq.gold?goldM:m;
-  g.add(pp(cubG,m,0,.72,0,.28,.5,.16));
+  g.add(pp(sphG,m,0,.72,0,.34,.43,.27));
   const hg=new THREE.Group();hg.position.set(0,1.12,0);hg.rotation.y=Math.PI;hg.add(pp(sphG,m,0,0,0,.2));
-  [-1,1].forEach(s=>{hg.add(pp(sphG,EYE,s*.07,.03,-.17,.035));hg.add(pp(sphG,SH,s*.07,.045,-.2,.012));});
   for(const k in COS)if(eq[k]&&k!=='cape')hg.add(COS[k].clone());
   hg.traverse(o=>o.layers.set(0));g.add(hg);
   if(eq.cape)g.add(pp(cubG,red,0,.7,-.13,.34,.55,.03));
@@ -594,7 +584,8 @@ function addPet(t,x,z){const g=new THREE.Group();BUILD[t](g);const p={g,t,x,z,di
 function cloneItem(i){const k=CL[i][1];
   if(k==='clear'){for(let j=pets.length-1;j>=0;j--)if(pets[j].clone){petG.remove(pets[j].g);pets.splice(j,1);}sfx.click();return;}
   if(pets.length>=45){dbg.textContent='Too many pets!';sfx.no();return;}
-  drawClone();const t=k==='random'?SP[(Math.random()*4)|0]:k;const pet=addPet(t,POD.x+(Math.random()-.5)*.5,POD.z);if(t==='me')pet.cur=true;cloneFx=1;sfx.buy();ASND[t](1);
+  if(bananas<cost(k)){sfx.no();dbg.textContent='Cloning costs '+cost(k)+' bananas';return;}
+  bananas-=cost(k);save();drawBana();drawShop();drawClone();const t=k==='random'?SP[(Math.random()*4)|0]:k;const pet=addPet(t,POD.x+(Math.random()-.5)*.5,POD.z);if(t==='me')pet.cur=true;cloneFx=1;sfx.buy();ASND[t](1);
   heart(new V3(POD.x-.3,1.6,POD.z));heart(new V3(POD.x+.3,1.9,POD.z));}
 function clonePress(p){const x=(p.x-PCLONE.x)/CS*768+384,y=(p.z-PCLONE.z)/CS*768+384;CL.forEach((it,i)=>{const b=clb(i);if(x>b[0]&&x<b[0]+b[2]&&y>b[1]&&y<b[1]+b[3])cloneItem(i);});}
 function onPanel(w){return[[PC,PS],[PM,PS],[PSHOP,PS],[PCLONE,CS]].some(([c,s])=>Math.abs(w.x-c.x)<s/2&&Math.abs(w.z-c.z)<s/2);}
@@ -604,7 +595,7 @@ drawClone();
 const vrt=new THREE.WebGLRenderTarget(480,360),vcam=new THREE.PerspectiveCamera(60,4/3,.05,200),
   vfPlane=new THREE.Mesh(new THREE.PlaneGeometry(.42,.26),new THREE.MeshBasicMaterial({map:vrt.texture}));
 vfPlane.position.set(0,0,.155);camG.add(vfPlane);vcam.layers.enable(5);// viewfinder on the back of the camera
-let held=null,camVy=0,vf=0,bHeld=false;const rec={on:false,mr:null,chunks:[],ctx:null,img:null,buf:new Uint8Array(480*360*4),last:0,audioDest:null,mime:'',ext:'webm'};
+let held=null,camVy=0,vf=0,bHeld=false;const rec={on:false,mr:null,chunks:[],ctx:null,img:null,buf:new Uint8Array(480*360*4),last:0};
 const hudPlane=(w,h,x,y)=>{const c=document.createElement('canvas');c.width=256;c.height=Math.round(256*h/w);const g=c.getContext('2d'),t=new THREE.CanvasTexture(c),m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:t,transparent:true,depthTest:false}));
   m.position.set(x,y,-1);m.renderOrder=9;m.layers.set(6);m.visible=false;camera.add(m);return{m,g,t,c};};
 const recHud=hudPlane(.16,.05,.32,.22),macHud=hudPlane(.2,.05,.32,.15);
@@ -612,11 +603,9 @@ function hudTxt(o,txt,col){o.g.clearRect(0,0,o.c.width,o.c.height);o.g.fillStyle
 function camHold(){if(held){held=null;return;}if(headW().distanceTo(camG.position)<4){held='d';dbg.textContent='Camera: C photo, R record video, E drop';}}
 function recStart(){if(rec.on||!window.MediaRecorder){if(!window.MediaRecorder)dbg.textContent='Video recording is not supported here';return;}
   const c=document.createElement('canvas');c.width=480;c.height=360;rec.ctx=c.getContext('2d');rec.img=rec.ctx.createImageData(480,360);rec.ctx.fillRect(0,0,480,360);rec.chunks=[];
-  const vs=c.captureStream(30),mix=new MediaStream(vs.getVideoTracks());if(rec.audioDest)rec.audioDest.stream.getAudioTracks().forEach(t=>mix.addTrack(t));
-  const types=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp8,opus','video/webm'],mt=types.find(t=>MediaRecorder.isTypeSupported(t))||'';
-  try{rec.mr=new MediaRecorder(mix,mt?{mimeType:mt,videoBitsPerSecond:6000000,audioBitsPerSecond:192000}:undefined);}catch(e){try{rec.mr=new MediaRecorder(mix);}catch(e2){dbg.textContent='Video recording failed to start';return;}}
-  rec.mime=rec.mr.mimeType||mt||'video/webm';rec.ext=rec.mime.includes('mp4')?'mp4':'webm';rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
-  rec.mr.onstop=()=>{const b=new Blob(rec.chunks,{type:rec.mime}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='branch-tag-video.'+rec.ext;a.click();dbg.textContent='Video + game audio saved as '+rec.ext.toUpperCase()+' ('+(b.size/1e6).toFixed(1)+' MB)';};
+  try{rec.mr=new MediaRecorder(c.captureStream(15),{mimeType:MediaRecorder.isTypeSupported('video/webm;codecs=vp8')?'video/webm;codecs=vp8':'video/webm'});}catch(e){try{rec.mr=new MediaRecorder(c.captureStream(15));}catch(e2){dbg.textContent='Video recording failed to start';return;}}
+  rec.mr.ondataavailable=e=>{if(e.data&&e.data.size)rec.chunks.push(e.data);};
+  rec.mr.onstop=()=>{const b=new Blob(rec.chunks,{type:'video/webm'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='branch-tag-video.webm';a.click();dbg.textContent='Video saved ('+(b.size/1e6).toFixed(1)+' MB)';};
   rec.mr.start();rec.on=true;recHud.m.visible=true;hudTxt(recHud,'● REC','#ff4a4a');sfx.click();}
 function recStop(){if(!rec.on)return;rec.on=false;recHud.m.visible=false;try{rec.mr.stop();}catch(e){}sfx.click();}
 function camRec(){if(rec.on)recStop();else if(held)recStart();}
@@ -700,11 +689,11 @@ function outCheck(dt){tpT=Math.max(0,tpT-dt*1.5);tpBeam.material.opacity=.1+.5*t
 const clock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const dt=(Math.min(clock.getDelta(),.05)||.016)*(mods.slowmo?.35:1);
-  if(mods.fly)flyStep(dt);else if(inVR())vrStep(dt);else deskStep(dt);
+  if(inVR())vrStep(dt);else deskStep(dt);
   outCheck(dt);petStep(dt);macroStep(dt);stickStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
   {const li=localIt();if(li!==lastLi){if(!li)tags++;lastLi=li;setState();sfx.tag();hands.forEach(h=>buzz(h,1,200));}}
   aiStep(dt);
-  renderer.render(scene,renderCam(dt));
+  renderer.render(scene,camera);
 });
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();tpCam.aspect=camera.aspect;tpCam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
 </script></body></html>
