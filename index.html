@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Branch Tag VR - Clean Rig</title>
+<title>Branch Tag VR - Monke Rig</title>
 <style>
 html,body{margin:0;height:100%;overflow:hidden;background:#9ad0ec;font-family:system-ui,sans-serif}
 canvas{display:block}
@@ -12,7 +12,7 @@ canvas{display:block}
 addEventListener('error',function(e){var d=document.getElementById('err');if(!d){d=document.createElement('pre');d.id='err';d.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:50%;overflow:auto;margin:0;padding:10px;background:#300d;color:#fff;font:12px monospace;z-index:9999;white-space:pre-wrap';document.body.appendChild(d);}
  d.textContent+=(e.target&&e.target.src?'FAILED TO LOAD '+e.target.src:(e.message||'error')+(e.lineno?' (line '+e.lineno+')':''))+'\n';},true);
 </script>
-<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: Q / P = arm length, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
+<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse &middot; Q blue portal &middot; E orange portal &middot; V portal gun<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: [ / ] = arm length, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -132,7 +132,7 @@ const hands=[0,1].map(i=>{
   const h={m,arm,g,src:null,prev:new V3(),w:new V3(),touch:false,init:false};
   c.addEventListener('connected',e=>h.src=e.data);c.addEventListener('disconnected',()=>h.src=null);
   return h;});
-const torso=new THREE.Mesh(new THREE.SphereGeometry(.34,12,9),pMat);torso.scale.set(1.05,1.25,.8);scene.add(torso);const chest=new THREE.Mesh(new THREE.SphereGeometry(.25,12,8),pMat);chest.scale.set(1.05,.85,.7);scene.add(chest);
+const torso=new THREE.Mesh(new THREE.BoxGeometry(.48,.62,.34),pMat);scene.add(torso);
 function link(m,a,b){_t.subVectors(b,a);const l=_t.length()||.01;m.position.copy(a).addScaledVector(_t,.5);m.scale.y=l;m.quaternion.setFromUnitVectors(Y,_t.divideScalar(l));}
 function buzz(h,s,ms){try{const g=h.src&&h.src.gamepad;if(!g)return;const a=g.hapticActuators&&g.hapticActuators[0];
   if(a&&a.pulse)a.pulse(s,ms);else if(g.vibrationActuator)g.vibrationActuator.playEffect('dual-rumble',{duration:ms,strongMagnitude:s,weakMagnitude:s});}catch(e){}}
@@ -150,9 +150,9 @@ function ropeStep(h,A,dt){// noodle arm = verlet rope pinned at shoulder and han
 function avatar(dt){
   const hd=headW();
   if(mods.rainbow&&!localIt())pMat.color.setHSL((performance.now()/1500)%1,.85,.55);
-  torso.position.set(hd.x,hd.y-.42,hd.z);chest.position.set(hd.x,hd.y-.43,hd.z-.015);torso.rotation.y=_e.setFromQuaternion(camera.quaternion,'YXZ').y+rig.rotation.y;chest.rotation.y=torso.rotation.y;torso.updateMatrixWorld();chest.updateMatrixWorld();
+  torso.position.set(hd.x,hd.y-.42,hd.z);torso.rotation.y=_e.setFromQuaternion(camera.quaternion,'YXZ').y+rig.rotation.y;torso.updateMatrixWorld();
   hands.forEach(h=>{const side=torso.worldToLocal(h.m.position.clone()).x<0?-.17:.17;
-    const sh=torso.localToWorld(new V3(side,.18,0)),vd=h.m.position.clone().sub(sh),vis=sh.clone().addScaledVector(vd,Math.min(1,ARM_VISUAL_MAX/Math.max(.001,vd.length())));link(h.arm,sh,vis);h.m.scale.setScalar(mods.bighands?3:1.35);h.arm.visible=!mods.noodle;
+    const sh=torso.localToWorld(new V3(side,.18,0));link(h.arm,sh,h.m.position);h.m.scale.setScalar(mods.bighands?3:1.35);h.arm.visible=!mods.noodle;
     if(h.beads)ropeStep(h,sh,dt||.016);});// noodle arms: rope
 }
 
@@ -267,7 +267,7 @@ addEventListener('mousedown',e=>{if(inVR())return;drag=true;// desktop: aim (or 
   if(pi&&pi.distance<10){let ob=pi.object;while(ob&&!ob.userData.pet)ob=ob.parent;if(ob){petIt(ob.userData.pet);return;}}
   const o=rc.ray.origin,d=rc.ray.direction;
   if(d.y<-1e-3){const t=(PC.y-o.y)/d.y;if(t>0&&t<7)pressAt(o.clone().addScaledVector(d,t));}});
-addEventListener('keydown',e=>{const d=e.code==='KeyQ'?1:e.code==='KeyP'?-1:0;// desktop: Q longer arms, P shorter
+addEventListener('keydown',e=>{const d=e.code==='BracketRight'?1:e.code==='BracketLeft'?-1:0;// desktop: ] longer arms, [ shorter; Q/E fire portals
   if(d&&!inVR()){cfg.arm=Math.max(1,cfg.arm+d*Math.max(1,Math.round(cfg.arm*.05)));ARM=cfg.arm/10;dbg.textContent='Arm length '+ARM.toFixed(1)+'x';drawPanel();}});
 
 // ---------- Mod menu (floor screen left of the computer + pop-up menu; desktop keys 1-0, M) ----------
@@ -275,16 +275,16 @@ const MODS=[['NOODLE ARMS','noodle'],['LOW GRAVITY','lowg'],['SUPER FLING','flin
   ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
   ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['STICK (OWNER ONLY)','stick']];
 const ACT=['respawn','randmap','mrec','mplay','mslot'];
-const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>{const cols=4,w=238,g=10,rows=Math.ceil(MODS.length/cols),rh=Math.min(94,(1024-104)/rows);return[20+(i%cols)*(w+g),92+((i/cols)|0)*rh,w,rh-7];};
+const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>[24+(i%3)*330,112+((i/3)|0)*74,312,66];
 mods.music=mods.sfx=mods.pets=true;
-const armK=()=>ARM,ARM_VISUAL_MAX=1.05;// physics reach stays fully adjustable; only rendered arms are clamped
+const armK=()=>ARM;// arm reach and visible arm length are both unlimited
 const mac={slot:0,rec:false,play:false,t:0,i:0,acc:0,map:0,lbl:'',data:[[],[],[]]};
 const mc=document.createElement('canvas');mc.width=1024;mc.height=1024;const mx=mc.getContext('2d'),mTex=new THREE.CanvasTexture(mc);
 const mpanel=new THREE.Mesh(new THREE.PlaneGeometry(PS,PS),new THREE.MeshBasicMaterial({map:mTex}));mpanel.rotation.x=-Math.PI/2;mpanel.position.copy(PM);scene.add(mpanel);
 const FP=1.8,fp=new THREE.Mesh(new THREE.PlaneGeometry(FP,FP),new THREE.MeshBasicMaterial({map:mTex,side:THREE.DoubleSide,depthTest:false}));fp.visible=false;fp.renderOrder=8;scene.add(fp);// pop-up copy of the menu
 function drawMods(){mx.fillStyle='#1a0b1a';mx.fillRect(0,0,1024,1024);mx.textAlign='left';mx.fillStyle='#ff9bff';mx.font='bold 46px monospace';mx.fillText('MOD MENU',24,76);
   MODS.forEach(([n,k],i)=>{const b=mb(i),on=mods[k],act=ACT.includes(k);mx.fillStyle=act?'#3a4a8a':on?'#2fbf71':'#6b2a3a';mx.fillRect(...b);mx.fillStyle='#fff';mx.textAlign='left';
-    mx.font='bold 15px monospace';mx.fillText((i<10?'['+(i+1)%10+'] ':'')+(k==='mslot'?'MACRO SLOT '+(mac.slot+1):n),b[0]+9,b[1]+22);mx.font='bold 19px monospace';mx.fillText(k==='mrec'&&mac.rec?'RECORDING...':k==='mplay'&&mac.play?'PLAYING...':act?'TAP':on?'ON':'OFF',b[0]+9,b[1]+48);});
+    mx.font='bold 18px monospace';mx.fillText((i<10?'['+(i+1)%10+'] ':'')+(k==='mslot'?'MACRO SLOT '+(mac.slot+1):n),b[0]+12,b[1]+26);mx.font='bold 24px monospace';mx.fillText(k==='mrec'&&mac.rec?'RECORDING...':k==='mplay'&&mac.play?'PLAYING...':act?'TAP':on?'ON':'OFF',b[0]+12,b[1]+55);});
   mTex.needsUpdate=true;}
 function toggleMod(k){
   if(k==='stick'&&!mods.stick&&!isOwner()){dbg.textContent='Only the lobby owner has the stick';sfx.no();return;}
@@ -506,7 +506,8 @@ sfx.no=()=>{if(mods.sfx)tone(150,.2,'sawtooth',.25,0,-50);};
 const headG=new THREE.Group(),COS={};scene.add(headG);
 const mkM=(c,e)=>new THREE.MeshPhongMaterial({color:c,emissive:e||0,flatShading:true,shininess:25}),goldM=mkM(0xffd24a,0x553d00),
   cy=(rt,rb,h,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,10),m);o.position.set(x,y,z);return o;};
-const plainHead=new THREE.Mesh(new THREE.SphereGeometry(.22,12,10),pMat);headG.add(plainHead);
+const monkeHead=new THREE.Mesh(new THREE.SphereGeometry(.25,12,10),pMat);monkeHead.scale.set(1.05,1,.9);headG.add(monkeHead);const monkeMuzzle=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),pMat);monkeMuzzle.position.set(0,-.06,-.21);monkeMuzzle.scale.set(1.15,.72,.65);headG.add(monkeMuzzle);[-1,1].forEach(s=>{const ear=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),pMat);ear.position.set(s*.24,0,0);ear.scale.x=.55;headG.add(ear);});
+[-1,1].forEach(s=>{headG.add(pp(sphG,EYE,s*.085,.035,-.225,.04));headG.add(pp(sphG,SH,s*.085,.052,-.255,.014));const brow=new THREE.Mesh(new THREE.BoxGeometry(.11,.035,.035),pMat);brow.position.set(s*.085,.11,-.21);brow.rotation.z=s*.12;headG.add(brow);});
 const addC=(k,o)=>{o.visible=false;COS[k]=o;headG.add(o);return o;},blk=mkM(0x1b1b1f),red=mkM(0xd23a3a),yel=mkM(0xffe135,0x5a4a00),pnk=mkM(0xff6fa5);
 {const g=new THREE.Group();g.add(cy(.15,.15,.22,blk,0,.32,0),cy(.26,.26,.025,blk,0,.21,0),cy(.155,.155,.04,red,0,.25,0));addC('tophat',g);}
 {const g=new THREE.Group();g.add(cy(0,.12,.3,pnk,0,.34,0),pp(sphG,yel,0,.5,0,.03));addC('party',g);}
@@ -573,6 +574,7 @@ function drawClone(){cx.fillStyle='#0b1420';cx.fillRect(0,0,768,768);cx.textAlig
 BUILD.me=g=>{const m=new THREE.MeshStandardMaterial({color:myColor(),roughness:.6}),hm=eq.gold?goldM:m;
   g.add(pp(sphG,m,0,.72,0,.34,.43,.27));
   const hg=new THREE.Group();hg.position.set(0,1.12,0);hg.rotation.y=Math.PI;hg.add(pp(sphG,m,0,0,0,.2));
+  [-1,1].forEach(s=>{hg.add(pp(sphG,EYE,s*.07,.03,-.17,.035));hg.add(pp(sphG,SH,s*.07,.045,-.2,.012));});
   for(const k in COS)if(eq[k]&&k!=='cape')hg.add(COS[k].clone());
   hg.traverse(o=>o.layers.set(0));g.add(hg);
   if(eq.cape)g.add(pp(cubG,red,0,.7,-.13,.34,.55,.03));
@@ -655,7 +657,22 @@ function macroStep(dt){
     pets.forEach((q,i)=>{const pa=a.p[i],pb=b.p[i];if(!pa||!pb)return;q.x=L(pa[0],pb[0]);q.z=L(pa[1],pb[1]);q.rot=L(pa[2],pb[2]);q.y=L(pa[3],pb[3]);q.happy=pa[4]?1:0;q.g.position.set(q.x,q.y,q.z);q.g.rotation.y=q.rot;});}
   const lbl=mac.rec?'REC M'+(mac.slot+1)+' '+Math.floor(mac.t)+'s':mac.play?'PLAY M'+(mac.slot+1)+' '+Math.floor(mac.t)+'s':'';
   if(lbl!==mac.lbl){mac.lbl=lbl;macHud.m.visible=!!lbl;if(lbl)hudTxt(macHud,(mac.rec?'● ':'▶ ')+lbl,mac.rec?'#ff4a4a':'#7CFFB2');}}
-addEventListener('keydown',e=>{if(inVR()||e.repeat)return;if(e.code==='KeyE')camHold();if(e.code==='KeyR')camRec();if(e.code==='KeyF')macRec();if(e.code==='KeyG')macPlay();});
+addEventListener('keydown',e=>{if(inVR()||e.repeat)return;if(e.code==='KeyR')camRec();if(e.code==='KeyF')macRec();if(e.code==='KeyG')macPlay();});
+
+// ---------- Portal gun + recursive portal cameras ----------
+const portalRT=[new THREE.WebGLRenderTarget(640,900),new THREE.WebGLRenderTarget(640,900)],portalCam=[new THREE.PerspectiveCamera(70,640/900,.03,300),new THREE.PerspectiveCamera(70,640/900,.03,300)],portalColor=[0x2a8cff,0xff8a22],portals=[];
+for(let i=0;i<2;i++){const g=new THREE.Group(),ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.065,10,40),new THREE.MeshBasicMaterial({color:portalColor[i],side:THREE.DoubleSide})),view=new THREE.Mesh(new THREE.PlaneGeometry(1.32,2.05),new THREE.MeshBasicMaterial({map:portalRT[i].texture,side:THREE.DoubleSide,depthWrite:false}));ring.scale.y=1.45;view.position.z=.012;ring.position.z=.025;view.renderOrder=6;ring.renderOrder=7;g.add(view,ring);g.visible=false;scene.add(g);portals.push({g,ring,view,n:new V3(0,0,1),lastSide:0,placed:false});}
+const portalGun=new THREE.Group(),pgBody=new THREE.Mesh(new THREE.CylinderGeometry(.105,.14,.5,12),new THREE.MeshPhongMaterial({color:0xf1f4f8,shininess:85})),pgCore=new THREE.Mesh(new THREE.SphereGeometry(.105,12,9),new THREE.MeshPhongMaterial({color:0x55ccff,emissive:0x1177cc,emissiveIntensity:1.2}));pgBody.rotation.x=Math.PI/2;pgBody.position.z=-.22;pgCore.position.z=-.46;portalGun.add(pgBody,pgCore);[-1,1].forEach((side,i)=>{const pm=new THREE.MeshPhongMaterial({color:i?0xff8a22:0x2a8cff,emissive:i?0x662800:0x003d88,emissiveIntensity:.8}),pr=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.48,7),pm);pr.rotation.x=Math.PI/2;pr.position.set(side*.13,0,-.38);portalGun.add(pr);});scene.add(portalGun);
+let portalHeld=[false,false],portalGunOn=true,portalCd=0;
+function portalShotSound(i){if(!mods.sfx||!AC)return;const base=i?330:520;tone(base,.13,'sawtooth',.18,0,i?180:-160);tone(base*1.6,.2,'sine',.16,.03,i?260:-210);noise(.09,.1,2800,0,null,'bandpass');}
+function portalBasis(n){const up=Math.abs(n.y)>.92?new V3(0,0,1):Y.clone(),x=new V3().crossVectors(up,n).normalize(),y=new V3().crossVectors(n,x).normalize();return{x,y};}
+function placePortal(i){const o=headW(),d=camera.getWorldDirection(new V3()).normalize(),rc=new THREE.Raycaster(o,d,0,80),hits=rc.intersectObjects(mapG.children,true);if(!hits.length){dbg.textContent='Portal shot missed';sfx.no();return;}const h=hits[0],n=h.face?h.face.normal.clone().transformDirection(h.object.matrixWorld):d.clone().negate(),b=portalBasis(n),g=portals[i].g;g.position.copy(h.point).addScaledVector(n,.025);g.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(b.x,b.y,n));g.visible=true;g.updateMatrixWorld(true);portals[i].n.copy(n);portals[i].placed=true;portals[i].lastSide=0;pgCore.material.color.set(portalColor[i]);pgCore.material.emissive.set(i?0x883300:0x004499);portalShotSound(i);dbg.textContent=(i?'Orange':'Blue')+' portal placed';}
+function mapThroughPortal(obj,from,to){const inv=new THREE.Matrix4().copy(from.g.matrixWorld).invert(),flip=new THREE.Matrix4().makeRotationY(Math.PI),m=new THREE.Matrix4().copy(to.g.matrixWorld).multiply(flip).multiply(inv).multiply(obj.matrixWorld),pos=new V3(),q=new THREE.Quaternion(),sc=new V3();m.decompose(pos,q,sc);return{pos,q};}
+function portalCameraStep(){if(!portals[0].placed||!portals[1].placed)return;camera.updateMatrixWorld(true);for(let i=0;i<2;i++){const dst=portals[1-i],src=portals[i],v=mapThroughPortal(camera,src,dst),pc=portalCam[i];pc.position.copy(v.pos);pc.quaternion.copy(v.q);pc.fov=camera.fov;pc.aspect=640/900;pc.updateProjectionMatrix();src.g.visible=false;dst.g.visible=false;const xr=renderer.xr.enabled;renderer.xr.enabled=false;renderer.setRenderTarget(portalRT[i]);renderer.render(scene,pc);renderer.setRenderTarget(null);renderer.xr.enabled=xr;src.g.visible=dst.g.visible=true;}}
+function portalTeleportStep(){if(!portals[0].placed||!portals[1].placed||portalCd>0)return;const h=headW();for(let i=0;i<2;i++){const a=portals[i],b=portals[1-i],loc=a.g.worldToLocal(h.clone());if(Math.abs(loc.x)<.72&&Math.abs(loc.y)<1.08&&loc.z>0&&loc.z<.48){a.g.updateMatrixWorld(true);b.g.updateMatrixWorld(true);const mappedHead=h.clone().applyMatrix4(new THREE.Matrix4().copy(a.g.matrixWorld).invert()).applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI)).applyMatrix4(b.g.matrixWorld),delta=mappedHead.sub(h);rig.position.add(delta).addScaledVector(b.n,.65);const aq=new THREE.Quaternion(),bq=new THREE.Quaternion();a.g.getWorldQuaternion(aq);b.g.getWorldQuaternion(bq);const rot=bq.multiply(new THREE.Quaternion().setFromAxisAngle(Y,Math.PI)).multiply(aq.invert());vel.applyQuaternion(rot);if(!inVR()){const fd=new V3(0,0,-1).applyEuler(new THREE.Euler(pitch,yaw,0,'YXZ')).applyQuaternion(rot);yaw=Math.atan2(-fd.x,-fd.z);pitch=Math.asin(Math.max(-1,Math.min(1,fd.y)));}hands.forEach(x=>x.init=false);portalCd=.65;sfx.tp();dbg.textContent='PORTAL TELEPORT';break;}}}
+function portalGunStep(dt){portalCd=Math.max(0,portalCd-dt);portalGun.visible=portalGunOn;const q=camera.getWorldQuaternion(new THREE.Quaternion()),f=new V3(0,0,-1).applyQuaternion(q),r=new V3(1,0,0).applyQuaternion(q);portalGun.position.copy(headW()).addScaledVector(f,.52).addScaledVector(r,.28).addScaledVector(Y,-.24);portalGun.quaternion.copy(q);portalCameraStep();portalTeleportStep();}
+addEventListener('keydown',e=>{if(e.repeat)return;if(!inVR()&&portalGunOn&&e.code==='KeyQ'){e.preventDefault();e.stopImmediatePropagation();placePortal(0);return;}if(!inVR()&&portalGunOn&&e.code==='KeyE'){e.preventDefault();e.stopImmediatePropagation();placePortal(1);return;}if(e.code==='KeyV'){portalGunOn=!portalGunOn;dbg.textContent='Portal gun '+(portalGunOn?'ON':'OFF');}});
+renderer.xr.addEventListener('sessionstart',()=>{hands.forEach((h,i)=>{const c=renderer.xr.getController(i);c.addEventListener('selectstart',()=>placePortal(0));c.addEventListener('squeezestart',()=>placePortal(1));});});
 
 // ---------- Stick (owner only: you when solo, the lobby host in a lobby; everyone else sees it but can't use it) ----------
 const isOwner=()=>net!=='JOINED',stickG=new THREE.CylinderGeometry(.022,.03,1.3,8),stickM=PMt(0x8a5a2b),stick=new THREE.Mesh(stickG,stickM);
@@ -690,7 +707,7 @@ const clock=new THREE.Clock();
 renderer.setAnimationLoop(()=>{
   const dt=(Math.min(clock.getDelta(),.05)||.016)*(mods.slowmo?.35:1);
   if(inVR())vrStep(dt);else deskStep(dt);
-  outCheck(dt);petStep(dt);macroStep(dt);stickStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
+  outCheck(dt);petStep(dt);macroStep(dt);stickStep(dt);portalGunStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
   {const li=localIt();if(li!==lastLi){if(!li)tags++;lastLi=li;setState();sfx.tag();hands.forEach(h=>buzz(h,1,200));}}
   aiStep(dt);
   renderer.render(scene,camera);
