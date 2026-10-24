@@ -12,7 +12,7 @@ canvas{display:block}
 addEventListener('error',function(e){var d=document.getElementById('err');if(!d){d=document.createElement('pre');d.id='err';d.style.cssText='position:fixed;left:0;right:0;bottom:0;max-height:50%;overflow:auto;margin:0;padding:10px;background:#300d;color:#fff;font:12px monospace;z-index:9999;white-space:pre-wrap';document.body.appendChild(d);}
  d.textContent+=(e.target&&e.target.src?'FAILED TO LOAD '+e.target.src:(e.message||'error')+(e.lineno?' (line '+e.lineno+')':''))+'\n';},true);
 </script>
-<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse &middot; Q blue portal &middot; E orange portal &middot; V portal gun<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: [ / ] = arm length, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
+<div id="info"><b>BRANCH TAG</b><br>VR: press the Enter VR button. Touch trees, ground and platforms with your hands and push off to move.<br>Desktop: click or drag to look (arrow keys too) &middot; WASD swings your arms to push you along &middot; Shift faster &middot; Space jump &middot; Esc frees mouse &middot; Q blue portal &middot; E orange portal &middot; V portal gun<br>Computer = big screen on the floor ahead of spawn: put a hand on a key + squeeze trigger (VR) or aim + click (desktop). Desktop: [ / ] = arm length, H = mitosis, 1-0 = mods. VR: right stick turns, left Y pops up the mod menu (desktop: M). Mod menu (16 mods) = floor screen left of the computer.<br><i id="dbg" style="color:#9ef"></i></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script>
@@ -224,7 +224,7 @@ function hud(t,c){hx.clearRect(0,0,512,96);hx.fillStyle='#000a';hx.fillRect(0,0,
   hx.fillStyle=c;hx.font='bold 30px sans-serif';hx.fillText(t,256,44);hx.fillStyle='#fff';hx.font='20px sans-serif';hx.fillText('Tags: '+tags,256,80);hudTex.needsUpdate=true;}
 
 // ---------- Computer: floor screen with keypad (type lobby, color, map, arm) ----------
-var savedData={};try{savedData=JSON.parse(localStorage.getItem('btagSave')||'{}');}catch(e){}var portalGunOn=savedData.portal!==false;const cfg=Object.assign({r:5,g:6,b:7,arm:18,map:0,lobby:0},savedData.cfg||{}),PS=3.6,PC=new V3(0,.03,4.5);let ARM=cfg.arm/10,sel=0,buf='';
+var mitosisClones=[],mitosisId=0;var savedData={};try{savedData=JSON.parse(localStorage.getItem('btagSave')||'{}');}catch(e){}var portalGunOn=savedData.portal!==false;const cfg=Object.assign({r:5,g:6,b:7,arm:18,map:0,lobby:0},savedData.cfg||{}),PS=3.6,PC=new V3(0,.03,4.5);let ARM=cfg.arm/10,sel=0,buf='';
 const pc=document.createElement('canvas');pc.width=1024;pc.height=1024;const px=pc.getContext('2d'),pTex=new THREE.CanvasTexture(pc);
 const panel=new THREE.Mesh(new THREE.PlaneGeometry(PS,PS),new THREE.MeshBasicMaterial({map:pTex}));panel.rotation.x=-Math.PI/2;panel.position.copy(PC);scene.add(panel);
 // Portal-style physical pedestal button floating above the computer, separate from its screen.
@@ -251,7 +251,7 @@ function drawPanel(){
   px.fillStyle=FIELDS[sel][0]==='NAME'?'#20d8ff':'#17485c';px.fillRect(...nameBtn);px.strokeStyle='#baf6ff';px.lineWidth=5;px.strokeRect(...nameBtn);px.fillStyle='#fff';px.textAlign='center';px.font='bold 34px monospace';px.fillText('CHANGE NAME',nameBtn[0]+nameBtn[2]/2,nameBtn[1]+51);
   px.textAlign='center';KEYS.forEach((k,i)=>{const b=kb(i);px.fillStyle=k==='ENT'?'#2a8f5a':k==='BACKSPACE'?'#8a3a3a':'#1f6b46';px.fillRect(...b);
     px.fillStyle='#fff';px.textAlign='center';px.font='bold '+(k==='BACKSPACE'?19:(i<13?40:26))+'px monospace';px.fillText(k,b[0]+b[2]/2,b[1]+b[3]/2+(i<13?14:9));});
-  px.textAlign='left';px.fillStyle='#9ef';px.font='26px monospace';px.fillText('NET: '+net+'   PLAYERS: '+(1+Object.keys(remotes).length),36,985);
+  px.textAlign='left';px.fillStyle='#9ef';px.font='26px monospace';px.fillText('NET: '+net+'   PLAYERS: '+(1+Object.keys(remotes).length+mitosisClones.length),36,985);
   pTex.needsUpdate=true;}
 function applyBuf(){const n=parseInt(buf||'0',10),f=FIELDS[sel][0];
   if(f==='LOBBY'){cfg.lobby=Math.min(99,n);clearTimeout(jt);jt=setTimeout(joinLobby,800);}
@@ -281,8 +281,8 @@ addEventListener('keydown',e=>{if(FIELDS[sel]&&FIELDS[sel][0]==='NAME'&&!e.repea
 // ---------- Mod menu (floor screen left of the computer + pop-up menu; desktop keys 1-0, M) ----------
 const MODS=[['NOODLE ARMS','noodle'],['LOW GRAVITY','lowg'],['SUPER FLING','fling'],['ZERO GRAVITY','zerog'],['HEAVY GRAVITY','heavy'],['SPEED BOOST','speed'],['BOUNCY WALLS','bouncy'],['BIG HANDS','bighands'],
   ['RAINBOW BODY','rainbow'],['NO FOG','nofog'],['WIDE FOV (DESKTOP)','fov'],['TAG AURA','aura'],['GHOST (INVISIBLE)','invis'],['FREEZE GORILLA','freeze'],['SLOW MOTION','slowmo'],['SNAP TURN (VR)','snap'],
-  ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['PEAK LIGHTING','peaklight'],['STICK (OWNER ONLY)','stick']];
-const ACT=['respawn','randmap','mrec','mplay','mslot'];
+  ['NO TAG COOLDOWN','nocd'],['ALWAYS IT','alwaysit'],['GIANT GORILLA','bigai'],['FAST GORILLA','fastai'],['AIR BRAKE','brake'],['NO SPEED LIMIT','uncap'],['AUTO RUN (DESKTOP)','autorun'],['LONG STRIDE (DESKTOP)','stride'],['RESPAWN (TAP)','respawn'],['RANDOM MAP (TAP)','randmap'],['MUSIC','music'],['SOUND FX','sfx'],['PETS','pets'],['GIANT PETS','bigpets'],['MACRO REC (TAP)','mrec'],['MACRO PLAY (TAP)','mplay'],['MACRO LOOP','mloop'],['MACRO SLOT','mslot'],['PEAK LIGHTING','peaklight'],['MITOSIS (TAP)','mitosis'],['STICK (OWNER ONLY)','stick']];
+const ACT=['respawn','randmap','mrec','mplay','mslot','mitosis'];
 const mods=Object.fromEntries(MODS.map(m=>[m[1],false])),PM=new V3(-4.4,.03,4.5),mb=i=>[24+(i%3)*330,112+((i/3)|0)*74,312,66];
 mods.music=mods.sfx=mods.pets=true;if(savedData.mods)for(const k in savedData.mods)if(k in mods)mods[k]=!!savedData.mods[k];if(savedData.peaklight===false)mods.peaklight=false;else mods.peaklight=true;
 const armK=()=>ARM;// arm reach and visible arm length are both unlimited
@@ -298,7 +298,7 @@ function applyLighting(){const on=!!mods.peaklight;renderer.shadowMap.enabled=on
 function toggleMod(k){
   if(k==='stick'&&!mods.stick&&!isOwner()){dbg.textContent='Only the lobby owner has the stick';sfx.no();return;}
   if(k==='mrec'){macRec();return;}if(k==='mplay'){macPlay();return;}if(k==='mslot'){mac.slot=(mac.slot+1)%3;sfx.click();drawMods();return;}
-  if(k==='respawn'){sfx.click();respawn();dbg.textContent='Respawned';return;}
+  if(k==='respawn'){sfx.click();respawn();dbg.textContent='Respawned';return;}if(k==='mitosis'){mitosis();drawMods();return;}
   if(k==='randmap'){sfx.click();if(net!=='JOINED'){cfg.map=(Math.random()*4)|0;buildMap(cfg.map);respawn();drawPanel();}return;}
   mods[k]=!mods[k];sfx.mod(mods[k]);if(k==='peaklight')applyLighting();
   if(k==='nofog'){scene.fog.near=mods.nofog?1e5:25;scene.fog.far=mods.nofog?2e5:110;}
@@ -600,6 +600,7 @@ BUILD.me=g=>{const m=new THREE.MeshStandardMaterial({color:myColor(),roughness:.
 ASND.me=v=>{if(!mods.sfx)return;tone(660,.1,'triangle',.3*v);tone(880,.12,'triangle',.3*v,.1);};
 function addPet(t,x,z){const g=new THREE.Group();BUILD[t](g);const p={g,t,x,z,dir:new V3(0,0,1),tm:0,pause:true,cd:0,happy:0,vy:3,y:0,snd:1,sp:.7+Math.random()*.5,rot:Math.random()*6.28,cur:Math.random()<.5,clone:true};
   g.userData.pet=p;g.position.set(x,0,z);petG.add(g);pets.push(p);return p;}
+function mitosis(){const id='MITOSIS_'+(++mitosisId),r=mkRemote(id);delete remotes[id];const hd=headW(),body=torso.position.clone(),lh=hands[0].m.position.clone(),rh=hands[1].m.position.clone();r.head.position.copy(hd);r.body.position.copy(body);r.lh.position.copy(lh);r.rh.position.copy(rh);r.body.rotation.y=torso.rotation.y;const ls=torso.localToWorld(new V3(-.11,.18,0)),rs=torso.localToWorld(new V3(.11,.18,0));link(r.la,ls,lh);link(r.ra,rs,rh);r.mat.color.set(myColor());r.mat.emissive.set(0);r.lastName=playerName;setNameTag(r.tag,playerName);remoteCosmetics(r,Object.keys(eq).filter(k=>eq[k]).join(','));r.g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});r.wander={dir:new V3(Math.random()-.5,0,Math.random()-.5).normalize(),t:.5+Math.random()*2,s:.45+Math.random()*.55,baseHead:r.head.position.clone().sub(r.body.position),baseLH:r.lh.position.clone().sub(r.body.position),baseRH:r.rh.position.clone().sub(r.body.position),baseBodyY:r.body.position.y};mitosisClones.push(r);cloneFx=1;sfx.buy();heart(hd.clone().add(new V3(-.22,.25,0)));heart(hd.clone().add(new V3(.22,.38,0)));dbg.textContent='MITOSIS '+mitosisClones.length+' CREATED';drawPanel();}
 function cloneItem(i){const k=CL[i][1];
   if(k==='clear'){for(let j=pets.length-1;j>=0;j--)if(pets[j].clone){petG.remove(pets[j].g);pets.splice(j,1);}sfx.click();return;}
   if(pets.length>=45){dbg.textContent='Too many pets!';sfx.no();return;}
@@ -697,6 +698,7 @@ stick.add(pp(sphG,PMt(0xd9a441),0,.65,0,.05));stick.visible=false;scene.add(stic
 let stickTip=null,stickA=null,tipPrev=new V3(),swooshCd=0,stickKickCd=0,stHeld=false;const _sq=new THREE.Quaternion(),_sd=new V3();
 sfx.swoosh=v=>{if(mods.sfx)noise(.12,.25*v,2500,0,null,'bandpass');};
 addEventListener('keydown',e=>{if(e.code==='KeyT'&&!e.repeat&&!inVR())toggleMod('stick');});
+addEventListener('keydown',e=>{if(e.code==='KeyH'&&!e.repeat&&!inVR())mitosis();});
 function stickStep(dt){
   if(!isOwner()&&mods.stick){mods.stick=false;drawMods();dbg.textContent='Only the lobby owner has the stick';}
   const rh=hands.find(h=>h.src&&h.src.handedness==='right'),g=rh&&rh.src.gamepad,pr=!!(g&&g.buttons[3]&&g.buttons[3].pressed);
@@ -719,12 +721,13 @@ function outCheck(dt){tpT=Math.max(0,tpT-dt*1.5);tpBeam.material.opacity=.1+.5*t
   if(tpCd<=0&&(h.y<(VOID?-12:-4)||h.y>150||Math.abs(h.x)>66||Math.abs(h.z)>66)){
     respawn();sfx.tp();tpT=1;tpCd=1;hands.forEach(x=>buzz(x,1,250));hud('TELEPORTED BACK!','#66ffee');setTimeout(setState,1600);}}
 
+function mitosisStep(dt){for(const r of mitosisClones){const w=r.wander;if(!w)continue;w.t-=dt;if(w.t<=0){w.t=.6+Math.random()*2.4;w.dir.set(Math.random()-.5,0,Math.random()-.5);if(w.dir.lengthSq()<.01)w.dir.set(1,0,0);w.dir.normalize();}const d=w.dir.clone().multiplyScalar(w.s*dt),next=r.head.position.clone().add(d),h=hit(next,.28);if(h){w.dir.reflect(h.n).setY(0).normalize();w.t=.2;continue;}r.body.position.add(d);r.body.position.y=w.baseBodyY;r.body.rotation.y=Math.atan2(w.dir.x,w.dir.z);w.ph=(w.ph||0)+dt*(7+w.s*3);const swing=Math.sin(w.ph)*.32,bob=Math.abs(Math.sin(w.ph*2))*.025;const facing=new THREE.Quaternion().setFromAxisAngle(Y,r.body.rotation.y),walkL=new V3(0,bob,swing).applyQuaternion(facing),walkR=new V3(0,bob,-swing).applyQuaternion(facing);r.head.position.copy(r.body.position).add(w.baseHead);r.lh.position.copy(r.body.position).add(w.baseLH).add(walkL);r.rh.position.copy(r.body.position).add(w.baseRH).add(walkR);const ls=r.body.position.clone().add(new V3(-.11,.18,0).applyQuaternion(facing)),rs=r.body.position.clone().add(new V3(.11,.18,0).applyQuaternion(facing));link(r.la,ls,r.lh.position);link(r.ra,rs,r.rh.position);if(r.cos){const headAnchor=r.cos.children[0];if(headAnchor)headAnchor.position.copy(r.head.position);for(let i=1;i<r.cos.children.length;i++)r.cos.children[i].position.copy(r.body.position).add(new V3(0,0,.14).applyQuaternion(facing));}}}
 // ---------- Main loop ----------
 applyLighting();const clock=new THREE.Clock();setInterval(()=>{if(typeof save==='function')save();},5000);addEventListener('beforeunload',()=>{if(typeof save==='function')save();});
 renderer.setAnimationLoop(()=>{
   const dt=(Math.min(clock.getDelta(),.05)||.016)*(mods.slowmo?.35:1);
   if(inVR())vrStep(dt);else deskStep(dt);
-  outCheck(dt);petStep(dt);macroStep(dt);stickStep(dt);portalGunStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
+  outCheck(dt);petStep(dt);mitosisStep(dt);macroStep(dt);stickStep(dt);portalGunStep(dt);bananaStep(dt);avatar(dt);headStep(dt);netStep(dt);netTick(performance.now());
   {const li=localIt();if(li!==lastLi){if(!li)tags++;lastLi=li;setState();sfx.tag();hands.forEach(h=>buzz(h,1,200));}}
   aiStep(dt);if(mods.peaklight)warmRim.intensity=1.05+Math.sin(performance.now()/900)*.18;
   renderer.render(scene,camera);
